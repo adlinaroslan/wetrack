@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'signin_page.dart';
+import '../../screens/signin_page.dart';
 
 class RoleSelectionPage extends StatefulWidget {
   const RoleSelectionPage({super.key});
@@ -72,10 +72,10 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
         onTap: () {
           setState(() => selectedRole = role);
           Future.delayed(const Duration(milliseconds: 200), () {
-            if (!mounted) return; 
+            if (!mounted) return;
             Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => SignInPage(role: role)),
+              context,
+              MaterialPageRoute(builder: (_) => SignInPage(role: role)),
             );
           });
         },
@@ -93,7 +93,6 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 offset: const Offset(0, 4),
               ),
             ],
-
           ),
           alignment: Alignment.center,
           child: Text(

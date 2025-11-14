@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
-import 'firebase_options.dart';
-import 'user/user_homepage.dart';
-import 'user/user_list_asset.dart';
-import 'user/user_asset_request.dart';
-import 'user/user_notification.dart';
+import 'services/firebase_options.dart';
+import 'screens/user/user_homepage.dart';
+import 'screens/user/user_list_asset.dart';
+import 'screens/user/user_asset_request.dart';
+import 'screens/user/user_notification.dart';
 import 'logout.dart';
-import 'user/user_scan_qr_page.dart';
+import 'screens/user/user_scan_qr_page.dart';
 import 'splash_screen.dart';
 
 void main() async {

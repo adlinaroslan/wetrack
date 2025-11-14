@@ -7,9 +7,9 @@ import 'user_my_request.dart';
 import 'user_asset_inuse.dart';
 import 'user_return_asset.dart';
 import 'user_history.dart';
-import '../../logout.dart';
+import '../../../logout.dart';
 import 'user_notification.dart';
-import '../chat_list_page.dart';
+import '../../chat_list_page.dart';
 import 'user_profile_page.dart';
 
 class HomePage extends StatefulWidget {

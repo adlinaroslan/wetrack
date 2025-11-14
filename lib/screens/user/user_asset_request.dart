@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../chat_list_page.dart';
+import '../../chat_list_page.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
-import '../logout.dart';
+import '../../logout.dart';
 import 'user_homepage.dart';
 
 class RequestAssetPage extends StatefulWidget {
@@ -65,7 +65,8 @@ class _RequestAssetPageState extends State<RequestAssetPage> {
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
               child: Row(
                 children: [
                   IconButton(
@@ -75,7 +76,10 @@ class _RequestAssetPageState extends State<RequestAssetPage> {
                   const SizedBox(width: 8),
                   const Text(
                     'Request Asset',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18),
                   ),
                   const Spacer(),
                   IconButton(
@@ -276,8 +280,10 @@ class _RequestAssetPageState extends State<RequestAssetPage> {
               unselectedItemColor: Colors.white70,
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
-                BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Logout'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.logout), label: 'Logout'),
               ],
               onTap: (index) {
                 if (index == 0) {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../chat_list_page.dart';
-import '../logout.dart';
+import '../../chat_list_page.dart';
+import '../../logout.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
 import 'user_return_asset_details.dart';
