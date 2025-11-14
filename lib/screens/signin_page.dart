@@ -1,12 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'user/user_homepage.dart';
 import 'signup_page.dart';
 import 'technician/technician_home.dart';
 import 'administrator/admin_home.dart';
 
-class SignInPage extends StatelessWidget {
+class SignInPage extends StatefulWidget {
   final String role;
   const SignInPage({super.key, required this.role});
 
+  @override
+  State<SignInPage> createState() => _SignInPageState();
+}
+
+class _SignInPageState extends State<SignInPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  String? errorText;
+  bool isLoading = false;
+  bool _passwordObscured = true;
+
+  Future<void> handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => errorText = "Please fill in all fields");
+      return;
+    }
+
+    try {
+      setState(() => isLoading = true);
+      setState(() => errorText = null);
+
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => errorText = e.message ?? "Login failed");
+    } catch (e) {
+      setState(() => errorText = "An error occurred: $e");
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,119 +83,92 @@ class SignInPage extends StatelessWidget {
                   const Text(
                     "WeTrack.",
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    "KICT Asset Tracking System",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  Text(
+                    "Sign In as ${widget.role}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
+                        buildInput("Email", emailController),
+                        const SizedBox(height: 14),
+                        // Password field with show/hide button
                         TextField(
-                          decoration: InputDecoration(
-                            labelText: "Username",
-                            labelStyle:
-                                TextStyle(color: Colors.grey.shade600),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          obscureText: true,
+                          controller: passwordController,
+                          obscureText: _passwordObscured,
                           decoration: InputDecoration(
                             labelText: "Password",
-                            labelStyle:
-                                TextStyle(color: Colors.grey.shade600),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                            suffixIcon: IconButton(
+                              icon: Icon(_passwordObscured
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              onPressed: () => setState(
+                                  () => _passwordObscured = !_passwordObscured),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        if (errorText != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(
+                              errorText!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
-                          height: 48,
+                          height: 50,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF004C5C),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            onPressed: () {
-                              // ✅ Navigation logic based on role
-                              if (role == "Technician") {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const TechnicianHomePage(),
+                            onPressed: isLoading ? null : handleLogin,
+                            child: isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white)
+                                : const Text(
+                                    "SIGN IN",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                );
-                              } else if (role == "Administrator") {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AdminHomePage(),
-                                  ),
-                                );
-                              } else if (role == "User") {
-                                            
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("User page coming soon!"),
-                                  ),
-                                );
-                              }
-                            },
-                            child: const Text(
-                              "LOGIN",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SignUpPage(),
-                              ),
-                            );
-                          },
-                          child: const Text.rich(
-                            TextSpan(
-                              text: "Not registered yet? ",
-                              style: TextStyle(color: Colors.black54),
-                              children: [
-                                TextSpan(
-                                  text: "Create a new account",
-                                  style: TextStyle(
-                                    color: Colors.teal,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              ],
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SignUpPage(role: widget.role),
                             ),
                           ),
-                        )
+                          child: const Text("Don't have an account? Sign Up"),
+                        ),
                       ],
                     ),
                   ),
@@ -150,6 +177,20 @@ class SignInPage extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget buildInput(String label, TextEditingController controller,
+      {bool obscure = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        filled: true,
+        fillColor: Colors.grey[100],
       ),
     );
   }
