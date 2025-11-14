@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
+import 'technician/technician_home.dart';
+import 'administrator/admin_home.dart';
 
 class SignInPage extends StatelessWidget {
   final String role;
-
   const SignInPage({super.key, required this.role});
+
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +80,33 @@ class SignInPage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              // ✅ Navigation logic based on role
+                              if (role == "Technician") {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const TechnicianHomePage(),
+                                  ),
+                                );
+                              } else if (role == "Administrator") {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AdminHomePage(),
+                                  ),
+                                );
+                              } else if (role == "User") {
+                                            
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("User page coming soon!"),
+                                  ),
+                                );
+                              }
+                            },
                             child: const Text(
                               "LOGIN",
                               style: TextStyle(

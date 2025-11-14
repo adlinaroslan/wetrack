@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/signin_page.dart';
+import 'signin_page.dart';
 
 class RoleSelectionPage extends StatefulWidget {
   const RoleSelectionPage({super.key});
@@ -48,15 +48,11 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 ),
                 const SizedBox(height: 80),
 
-                // User button
+                // Role buttons
                 buildRoleButton("User"),
                 const SizedBox(height: 20),
-
-                // Technician button
                 buildRoleButton("Technician"),
                 const SizedBox(height: 20),
-
-                // Administrator button
                 buildRoleButton("Administrator"),
               ],
             ),
@@ -75,15 +71,13 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
       child: GestureDetector(
         onTap: () {
           setState(() => selectedRole = role);
-
           Future.delayed(const Duration(milliseconds: 200), () {
-            if (!mounted) return;            // <— important
+            if (!mounted) return; 
             Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => SignInPage(role: role)),
+            context,
+            MaterialPageRoute(builder: (_) => SignInPage(role: role)),
             );
           });
-
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -92,7 +86,6 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFF3CD070) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-          
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -100,6 +93,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 offset: const Offset(0, 4),
               ),
             ],
+
           ),
           alignment: Alignment.center,
           child: Text(
