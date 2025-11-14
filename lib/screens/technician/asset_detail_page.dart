@@ -19,7 +19,8 @@ class AssetDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Asset Information", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text("Asset Information",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             _buildInfoCard(asset),
           ],
@@ -52,8 +53,10 @@ class AssetDetailPage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(asset.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text("Register Date: ${asset.registerDate}", style: const TextStyle(color: Colors.grey)),
+                  Text(asset.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text("Register Date: ${asset.registerDate ?? 'N/A'}",
+                      style: const TextStyle(color: Colors.grey)),
                 ],
               ),
             ],
@@ -63,14 +66,15 @@ class AssetDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.black54)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(value ?? 'N/A',
+              style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );

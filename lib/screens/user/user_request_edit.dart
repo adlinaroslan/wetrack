@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/request_model.dart';
-import '../services/firestore_service.dart';
+import '../../models/request_model.dart';
+import '../../services/firestore_service.dart';
 
 class EditRequestPage extends StatefulWidget {
   final AssetRequest request;

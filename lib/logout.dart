@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wetrack/role_selection.dart';
+import '../../screens/role_selection.dart';
 
 class LogoutPage extends StatelessWidget {
   const LogoutPage({super.key});
