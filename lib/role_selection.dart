@@ -69,42 +69,40 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   Widget buildRoleButton(String role) {
     final bool isSelected = selectedRole == role;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => selectedRole = role),
-      onExit: (_) => setState(() => selectedRole = null),
-      child: GestureDetector(
-        onTap: () {
-          setState(() => selectedRole = role);
-          Future.delayed(const Duration(milliseconds: 200), () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => SignInPage(role: role)),
-            );
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: double.infinity,
-          height: 50,
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF3CD070) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 6,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            role,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: () {
+        setState(() => selectedRole = role);
+        Future.delayed(const Duration(milliseconds: 200), () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => SignInPage(role: role)),
+          );
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        height: 50,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color.fromARGB(255, 104, 255, 157)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 6,
+              offset: const Offset(0, 4),
             ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          role,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

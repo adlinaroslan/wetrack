@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'signin_page.dart';
 
 class SuccessPage extends StatelessWidget {
-  const SuccessPage({super.key});
+  final String? assetName;
+  final String? role;
+
+  const SuccessPage({super.key, this.assetName, this.role});
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Determine the message dynamically
+    final String message = assetName == null
+        ? "Your account has been created successfully!"
+        : "You’ve successfully requested $assetName";
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -35,14 +43,14 @@ class SuccessPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  "Your account has been created",
+
+                // ✅ Use normal Text, not const
+                Text(
+                  message,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
                 ),
+
                 const SizedBox(height: 30),
                 Container(
                   decoration: const BoxDecoration(
@@ -52,11 +60,7 @@ class SuccessPage extends StatelessWidget {
                     ),
                   ),
                   padding: const EdgeInsets.all(20),
-                  child: const Icon(
-                    Icons.check,
-                    size: 40,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.check, size: 40, color: Colors.white),
                 ),
                 const SizedBox(height: 30),
                 SizedBox(
@@ -73,20 +77,21 @@ class SuccessPage extends StatelessWidget {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const SignInPage(role: "User"),
+                          builder: (context) =>
+                              SignInPage(role: role ?? "User"),
                         ),
                         (route) => false,
                       );
                     },
                     child: const Text(
-                      "CONTINUE",
+                      "CONTINUE TO LOGIN",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
