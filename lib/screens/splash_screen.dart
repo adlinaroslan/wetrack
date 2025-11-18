@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // Required for Timer or Future.delayed
-import '../../screens/role_selection.dart';
+import 'package:wetrack/screens/role_selection.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

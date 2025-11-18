@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../chat_list_page.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
-import '../../logout.dart';
+import 'package:wetrack/services/chat_list_page.dart';
+import 'package:wetrack/screens/logout.dart';
 import '../../services/firestore_service.dart';
 import '../../models/request_model.dart';
 import 'user_request_edit.dart';

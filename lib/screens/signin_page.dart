@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'user/user_homepage.dart';
 import 'signup_page.dart';
+import 'technician/technician_home.dart';
+import 'administrator/admin_home.dart';
 
 class SignInPage extends StatefulWidget {
   final String role;
@@ -37,10 +39,29 @@ class _SignInPageState extends State<SignInPage> {
       );
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+        final role = widget.role.toLowerCase();
+        if (role == 'user') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
+        } else if (role == 'technician') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const TechnicianHomePage()),
+          );
+        } else if (role == 'administrator' || role == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminHomePage()),
+          );
+        } else {
+          // Fallback to user homepage
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() => errorText = e.message ?? "Login failed");
