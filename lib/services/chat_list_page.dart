@@ -159,7 +159,7 @@ class ChatListPage extends StatelessWidget {
               ),
               leading: CircleAvatar(
                 radius: 28,
-                backgroundColor: const Color(0xFF00A7A7).withOpacity(0.1),
+                backgroundColor: const Color(0xFF00A7A7).withAlpha(26),
                 child: Icon(
                   Icons.person,
                   color: const Color(0xFF00A7A7),

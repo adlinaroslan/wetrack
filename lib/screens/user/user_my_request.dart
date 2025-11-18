@@ -21,6 +21,7 @@ class _UserMyRequestsPageState extends State<UserMyRequestsPage> {
   Widget build(BuildContext context) {
     final fs = FirestoreService();
     final uid = widget.userId;
+    final bottomPadding = MediaQuery.of(context).padding.bottom + 80;
 
     final sampleRequests = [
       {
@@ -101,7 +102,7 @@ class _UserMyRequestsPageState extends State<UserMyRequestsPage> {
         ),
         child: uid == null
             ? ListView.builder(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding),
                 itemCount: sampleRequests.length,
                 itemBuilder: (context, index) {
                   final req = sampleRequests[index];
@@ -131,7 +132,7 @@ class _UserMyRequestsPageState extends State<UserMyRequestsPage> {
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding),
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final r = data[index];
@@ -219,6 +220,7 @@ Widget _buildRequestTile(
   return GestureDetector(
     onTap: () async {
       if (requestObj != null) {
+        final messenger = ScaffoldMessenger.of(context);
         final updated = await Navigator.push<bool?>(
           context,
           MaterialPageRoute(
@@ -230,9 +232,8 @@ Widget _buildRequestTile(
         if (!isMounted) return;
 
         if (updated == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Request updated')),
-          );
+          messenger
+              .showSnackBar(const SnackBar(content: Text('Request updated')));
         }
       }
     },

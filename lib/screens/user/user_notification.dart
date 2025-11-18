@@ -104,8 +104,8 @@ class UserNotificationPage extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 25,
-                              backgroundColor: (notif["color"] as Color)
-                                  .withOpacity(0.15),
+                              backgroundColor:
+                                  (notif["color"] as Color).withAlpha(38),
                               child: Icon(
                                 notif["icon"] as IconData,
                                 color: notif["color"] as Color,

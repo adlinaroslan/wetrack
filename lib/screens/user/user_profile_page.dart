@@ -83,6 +83,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Future<void> _saveProfile() async {
     if (_user == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _loading = true);
     try {
       String? photoUrl = _photoUrl;
@@ -110,10 +111,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       // reload local data
       await _loadUser();
+      if (!mounted) return;
       setState(() => _editing = false);
     } catch (e) {
       debugPrint('Save profile error: $e');
-      ScaffoldMessenger.of(context)
+      messenger
           .showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
     } finally {
       setState(() => _loading = false);

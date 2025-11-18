@@ -32,6 +32,7 @@ class _EditRequestPageState extends State<EditRequestPage> {
   }
 
   Future<void> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final parsed = DateTime.parse(_requiredDateController.text);
       await _fs.updateRequest(widget.request.id, {
@@ -39,11 +40,11 @@ class _EditRequestPageState extends State<EditRequestPage> {
         'status': _status,
       });
 
-      if (mounted) Navigator.pop(context, true);
+      if (!mounted) return;
+      Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update request: $e')),
-      );
+      messenger.showSnackBar(
+          SnackBar(content: Text('Failed to update request: $e')));
     }
   }
 
@@ -66,7 +67,7 @@ class _EditRequestPageState extends State<EditRequestPage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _status,
+              initialValue: _status,
               items: const [
                 DropdownMenuItem(value: 'PENDING', child: Text('PENDING')),
                 DropdownMenuItem(value: 'APPROVED', child: Text('APPROVED')),

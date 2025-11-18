@@ -66,7 +66,7 @@ class TechnicianNotificationPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
-                  backgroundColor: note['color'].withOpacity(0.15),
+                  backgroundColor: note['color'].withAlpha(38),
                   child: Icon(note['icon'], color: note['color']),
                 ),
                 const SizedBox(width: 12),

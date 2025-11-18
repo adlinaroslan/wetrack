@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthPage extends StatefulWidget {
+  const AuthPage({Key? key}) : super(key: key);
+
   @override
-  _AuthPageState createState() => _AuthPageState();
+  State<AuthPage> createState() => _AuthPageState();
 }
 
 class _AuthPageState extends State<AuthPage> {
@@ -25,9 +27,11 @@ class _AuthPageState extends State<AuthPage> {
       result = await register(email, password);
     }
 
+    if (!mounted) return;
     setState(() => errorText = result != "success" ? result : null);
 
     if (result == "success") {
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, "/home");
     }
   }

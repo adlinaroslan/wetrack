@@ -84,6 +84,16 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Ensure the body gradient extends behind the app bar
+      extendBodyBehindAppBar: true,
+      // --- ADDED APP BAR FOR BACK NAVIGATION ---
+      appBar: AppBar(
+        backgroundColor: Colors.transparent, // Transparent background
+        elevation: 0, // No shadow
+        iconTheme: const IconThemeData(color: Colors.white), // White back arrow
+        // The default leading widget (back button) handles Navigator.pop(context)
+      ),
+      // ----------------------------------------
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

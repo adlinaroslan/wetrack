@@ -57,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 1500), // Zoom duration
               curve: Curves.easeInOutBack, // A nice bouncy curve for the zoom
-              transform: Matrix4.identity()..scale(_scale),
+              transform: Matrix4.diagonal3Values(_scale, _scale, _scale),
               child: const Text(
                 'WeTrack',
                 style: TextStyle(

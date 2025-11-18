@@ -83,7 +83,6 @@ class _AddAssetPageState extends State<AddAssetPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               // ============================
               // IMAGE PICKER UI
               // ============================
@@ -98,7 +97,8 @@ class _AddAssetPageState extends State<AddAssetPage> {
                         backgroundImage:
                             assetImage != null ? FileImage(assetImage!) : null,
                         child: assetImage == null
-                            ? const Icon(Icons.photo, size: 50, color: Colors.white)
+                            ? const Icon(Icons.photo,
+                                size: 50, color: Colors.white)
                             : null,
                       ),
                     ),
@@ -134,7 +134,8 @@ class _AddAssetPageState extends State<AddAssetPage> {
 
               _buildTextField(idController, "Asset ID", Icons.qr_code),
               _buildTextField(nameController, "Asset Name", Icons.devices),
-              _buildTextField(brandController, "Asset Brand", Icons.branding_watermark),
+              _buildTextField(
+                  brandController, "Asset Brand", Icons.branding_watermark),
 
               // ============================
               // DATE PICKER
@@ -163,23 +164,26 @@ class _AddAssetPageState extends State<AddAssetPage> {
                       });
                     }
                   },
-                  validator: (value) =>
-                      value == null || value.isEmpty ? "Please select a date" : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? "Please select a date"
+                      : null,
                 ),
               ),
 
               // ============================
               // CATEGORY DROPDOWN
               // ============================
-              const Text("Category", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Category",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<String>(
-                value: category,
+                initialValue: category,
                 decoration: _inputDecoration(),
                 items: const [
                   DropdownMenuItem(value: "Laptop", child: Text("Laptop")),
                   DropdownMenuItem(value: "Cable", child: Text("Cable")),
                   DropdownMenuItem(value: "Storage", child: Text("Storage")),
-                  DropdownMenuItem(value: "Electronics", child: Text("Electronics")),
+                  DropdownMenuItem(
+                      value: "Electronics", child: Text("Electronics")),
                 ],
                 onChanged: (value) => setState(() => category = value),
                 validator: (value) =>
@@ -191,9 +195,10 @@ class _AddAssetPageState extends State<AddAssetPage> {
               // ============================
               // STATUS DROPDOWN
               // ============================
-              const Text("Status", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Status",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<String>(
-                value: status,
+                initialValue: status,
                 decoration: _inputDecoration(),
                 items: const [
                   DropdownMenuItem(value: "Active", child: Text("Active")),
@@ -211,7 +216,8 @@ class _AddAssetPageState extends State<AddAssetPage> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00BFA6),
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -243,14 +249,16 @@ class _AddAssetPageState extends State<AddAssetPage> {
   }
 
   // TEXT FIELD BUILDER
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon) {
+  Widget _buildTextField(
+      TextEditingController controller, String label, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
-        decoration:
-            _inputDecoration().copyWith(labelText: label, prefixIcon: Icon(icon)),
-        validator: (value) => value == null || value.isEmpty ? "Required field" : null,
+        decoration: _inputDecoration()
+            .copyWith(labelText: label, prefixIcon: Icon(icon)),
+        validator: (value) =>
+            value == null || value.isEmpty ? "Required field" : null,
       ),
     );
   }

@@ -124,7 +124,7 @@ class _UserReturnAssetDetailsPageState
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withAlpha(51),
             borderRadius: BorderRadius.circular(25),
           ),
           child: CircleAvatar(
@@ -355,7 +355,7 @@ class _UserReturnAssetDetailsPageState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withAlpha(26),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -452,34 +452,34 @@ class _UserReturnAssetDetailsPageState
             commentController.text.isNotEmpty ? commentController.text : null,
       );
 
-      if (mounted) {
-        _showSnackbar(
-          context,
-          "Asset return confirmed successfully!",
-          const Color.fromARGB(255, 76, 175, 80),
-        );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Asset return confirmed successfully!'),
+          backgroundColor: Color.fromARGB(255, 76, 175, 80),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
 
-        // Navigate back after a successful action
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const UserReturnAssetPage(),
-              ),
-              (route) => route.isFirst, // Go back to the root of this stack
-            );
-          }
-        });
-      }
+      // Navigate back after a successful action
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const UserReturnAssetPage(),
+        ),
+        (route) => route.isFirst, // Go back to the root of this stack
+      );
     } catch (e) {
-      if (mounted) {
-        _showSnackbar(
-          context,
-          "Error: ${e.toString()}",
-          Colors.redAccent,
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
       setState(() => _isProcessing = false);
     }

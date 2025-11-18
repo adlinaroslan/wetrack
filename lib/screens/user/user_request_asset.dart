@@ -17,7 +17,7 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   DateTime? _selectedDate;
-  TextEditingController _reasonController = TextEditingController();
+  final TextEditingController _reasonController = TextEditingController();
   bool _isLoading = false;
 
   @override

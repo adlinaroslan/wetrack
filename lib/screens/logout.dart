@@ -31,11 +31,11 @@ class LogoutPage extends StatelessWidget {
             width: MediaQuery.of(context).size.width * 0.85,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withAlpha(242),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black26.withOpacity(0.1),
+                  color: Colors.black26.withAlpha(26),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),

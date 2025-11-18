@@ -221,7 +221,9 @@ class _RequestAssetPageState extends State<RequestAssetPage> {
                 ),
                 onPressed: selectedTime == null
                     ? null
-                    : () {
+                    : () async {
+                        await Future.delayed(const Duration(milliseconds: 200));
+                        if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Request submitted successfully!"),
@@ -229,13 +231,13 @@ class _RequestAssetPageState extends State<RequestAssetPage> {
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
-                        Future.delayed(const Duration(seconds: 1), () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HomePage()),
-                            (route) => false,
-                          );
-                        });
+                        await Future.delayed(const Duration(seconds: 1));
+                        if (!mounted) return;
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HomePage()),
+                          (route) => false,
+                        );
                       },
                 child: const Text(
                   "SUBMIT REQUEST",

@@ -1,6 +1,7 @@
 // lib/pages/admin/admin_request_page.dart
 import 'package:flutter/material.dart';
-import '../../models/asset_request.dart';
+import '../../models/request_model.dart';
+import '../../services/firestore_service.dart';
 import 'admin_request_detail.dart';
 
 class AdminRequestPage extends StatefulWidget {
@@ -22,72 +23,26 @@ class StatusColor {
 StatusColor getStatusColor(String status) {
   switch (status.toLowerCase()) {
     case 'approved':
-      return const StatusColor(background: Color(0xFFDFF5E1), text: Colors.green);
+      return const StatusColor(
+          background: Color(0xFFDFF5E1), text: Colors.green);
     case 'in progress':
-      return const StatusColor(background: Color(0xFFE0F7FA), text: Colors.teal);
+      return const StatusColor(
+          background: Color(0xFFE0F7FA), text: Colors.teal);
     case 'pending':
-      return const StatusColor(background: Color(0xFFFFF8E1), text: Colors.amber);
+      return const StatusColor(
+          background: Color(0xFFFFF8E1), text: Colors.amber);
     case 'declined':
       return const StatusColor(background: Color(0xFFFDECEA), text: Colors.red);
     case 'completed':
-      return const StatusColor(background: Color(0xFFE8F5E9), text: Colors.greenAccent);
+      return const StatusColor(
+          background: Color(0xFFE8F5E9), text: Colors.greenAccent);
     default:
       return const StatusColor(background: Colors.grey, text: Colors.black54);
   }
 }
 
 class _AdminRequestPageState extends State<AdminRequestPage> {
-  // Sample data — replace with real data source (Firebase / API) later
-  final List<AssetRequest> _requests = [
-    AssetRequest(
-      requestId: "#ROE5638",
-      assetId: "B230159",
-      requesterName: "Adlina Roslan",
-      reason: "Need laptop for presentation",
-      dateTime: "29 Dec 2021 12:05",
-      status: "In Progress",
-    ),
-    AssetRequest(
-      requestId: "#RQE6139",
-      assetId: "A67495",
-      requesterName: "Nurul Adlina",
-      reason: "Borrow projector",
-      dateTime: "29 Dec 2021 10:00",
-      status: "Approved",
-    ),
-    AssetRequest(
-      requestId: "#RQE6140",
-      assetId: "A12501",
-      requesterName: "PT. Example 1",
-      reason: "USB pendrive request",
-      dateTime: "29 Dec 2021 09:15",
-      status: "In Progress",
-    ),
-  ];
-
-  List<AssetRequest> get _inProgress =>
-      _requests.where((r) => r.status == "In Progress" || r.status == "Pending").toList();
-
-  List<AssetRequest> get _approved =>
-      _requests.where((r) => r.status == "Approved" || r.status == "Completed").toList();
-
-  void _acceptRequest(AssetRequest req) {
-    setState(() {
-      req.status = "Approved";
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Request accepted")),
-    );
-  }
-
-  void _declineRequest(AssetRequest req) {
-    setState(() {
-      req.status = "Declined";
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Request declined")),
-    );
-  }
+  final FirestoreService _fs = FirestoreService();
 
   void _openDetail(AssetRequest req) {
     Navigator.push(
@@ -95,10 +50,10 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
       MaterialPageRoute(
         builder: (_) => AdminRequestDetailPage(
           request: req,
-          onStatusChanged: (newStatus) {
-            setState(() {
-              req.status = newStatus;
-            });
+          onStatusChanged: (newStatus) async {
+            // update in Firestore
+            await _fs.updateRequest(req.id, {'status': newStatus});
+            setState(() {});
           },
         ),
       ),
@@ -121,8 +76,9 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
               width: 8,
               height: 110,
               decoration: BoxDecoration(
-                color: statusColors.background.withOpacity(0.5),
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                color: statusColors.background.withAlpha(128),
+                borderRadius:
+                    const BorderRadius.horizontal(left: Radius.circular(10)),
               ),
             ),
             const SizedBox(width: 12),
@@ -130,18 +86,24 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Date Time :  ${r.dateTime}", style: const TextStyle(fontSize: 12)),
+                  Text(
+                    "Date Time :  ${r.requestedDate.toLocal().toString().split('.').first}",
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
-                          child: Text("Asset ID    :  ${r.assetId}", style: const TextStyle(fontSize: 12))),
+                          child: Text("Asset ID    :  ${r.assetId}",
+                              style: const TextStyle(fontSize: 12))),
                       const SizedBox(width: 6),
-                      Text("B/L Number : BL123456", style: const TextStyle(fontSize: 12)),
+                      Text("B/L Number : BL123456",
+                          style: const TextStyle(fontSize: 12)),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text("User          :  ${r.requesterName}", style: const TextStyle(fontSize: 12)),
+                  Text("User          :  ${r.userName}",
+                      style: const TextStyle(fontSize: 12)),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -150,18 +112,55 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                         onPressed: () => _openDetail(r),
                         child: const Text("View Detail"),
                       ),
-                      if (r.status.toLowerCase() != "approved" && r.status.toLowerCase() != "declined")
+                      if (r.status.toLowerCase() != "approved" &&
+                          r.status.toLowerCase() != "rejected")
                         Row(
                           children: [
                             ElevatedButton(
-                              onPressed: () => _acceptRequest(r),
+                              onPressed: () async {
+                                // call approve
+                                try {
+                                  await _fs.approveRequest(
+                                    requestId: r.id,
+                                    assetId: r.assetId,
+                                    borrowerUserId: r.userId,
+                                    dueDate: r.requiredDate,
+                                  );
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Request approved')));
+                                  setState(() {});
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text('Approve failed: $e')));
+                                }
+                              },
                               style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.lightBlue[200], foregroundColor: Colors.white),
+                                  backgroundColor: Colors.lightBlue[200],
+                                  foregroundColor: Colors.white),
                               child: const Text("Accept"),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
-                              onPressed: () => _declineRequest(r),
+                              onPressed: () async {
+                                try {
+                                  await _fs.declineRequest(
+                                      requestId: r.id, assetId: r.assetId);
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Request declined')));
+                                  setState(() {});
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text('Decline failed: $e')));
+                                }
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.redAccent,
                               ),
@@ -171,7 +170,8 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                         )
                       else
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: statusColors.background,
                             borderRadius: BorderRadius.circular(8),
@@ -196,41 +196,70 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
   }
 
   Widget _inProgressList() {
-    final list = _inProgress;
-    if (list.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Text("No ongoing requests", style: TextStyle(color: Colors.black54)),
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: list.length,
-      itemBuilder: (context, idx) {
-        final r = list[idx];
-        return _requestCard(r);
+    return StreamBuilder<List<AssetRequest>>(
+      stream: _fs.getAllRequests(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final requests = snapshot.data ?? [];
+        final list = requests
+            .where((r) =>
+                r.status.toUpperCase() == 'PENDING' ||
+                r.status.toUpperCase() == 'IN PROGRESS' ||
+                r.status.toUpperCase() == 'PENDING_REQUEST')
+            .toList();
+        if (list.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text("No ongoing requests",
+                  style: TextStyle(color: Colors.black54)),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          itemCount: list.length,
+          itemBuilder: (context, idx) {
+            final r = list[idx];
+            return _requestCard(r);
+          },
+        );
       },
     );
   }
 
   Widget _approvedList() {
-    final list = _approved;
-    if (list.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Text("No approved requests", style: TextStyle(color: Colors.black54)),
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: list.length,
-      itemBuilder: (context, idx) {
-        final r = list[idx];
-        return _requestCard(r);
+    return StreamBuilder<List<AssetRequest>>(
+      stream: _fs.getAllRequests(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final requests = snapshot.data ?? [];
+        final list = requests
+            .where((r) =>
+                r.status.toUpperCase() == 'APPROVED' ||
+                r.status.toUpperCase() == 'COMPLETED')
+            .toList();
+        if (list.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text("No approved requests",
+                  style: TextStyle(color: Colors.black54)),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          itemCount: list.length,
+          itemBuilder: (context, idx) {
+            final r = list[idx];
+            return _requestCard(r);
+          },
+        );
       },
     );
   }
@@ -244,7 +273,8 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
           backgroundColor: const Color(0xFF00BFA6),
           elevation: 0,
           leading: BackButton(color: Colors.white),
-          title: const Text('Requests', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text('Requests',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           bottom: const TabBar(
             indicatorColor: Colors.white,
             tabs: [
