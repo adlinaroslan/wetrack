@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
-import 'services/firebase_options.dart';
-import 'screens/user/user_homepage.dart';
-import 'screens/user/user_list_asset.dart';
-import 'screens/user/user_asset_request.dart';
-import 'screens/user/user_notification.dart';
-import 'logout.dart';
-import 'screens/user/user_scan_qr_page.dart';
-import 'splash_screen.dart';
+import 'package:wetrack/services/firebase_options.dart';
+import 'package:wetrack/screens/user/user_homepage.dart';
+import 'package:wetrack/screens/user/user_list_asset.dart';
+import 'package:wetrack/screens/user/user_asset_request.dart';
+import 'package:wetrack/screens/user/user_notification.dart';
+import 'package:wetrack/screens/logout.dart';
+import 'package:wetrack/screens/user/user_scan_qr_page.dart';
+import 'package:wetrack/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

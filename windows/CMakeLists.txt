@@ -2,6 +2,14 @@
 cmake_minimum_required(VERSION 3.14)
 project(wetrack LANGUAGES CXX)
 
+# --- START OF FIX FOR FIREBASE C2665 ERROR ---
+# Explicitly set the C++ standard to 17 globally for the project.
+# This fixes compilation errors related to std::variant in the
+# Firebase C++ SDK on some Windows systems.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+# --- END OF FIX ---
+
 # Suppress deprecation warnings for older CMake compatibility
 if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)

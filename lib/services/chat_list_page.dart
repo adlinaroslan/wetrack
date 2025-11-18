@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 // NOTE: Replaced previous relative imports with placeholders for demonstrability
 // In a full project, replace the placeholder routes with your actual pages.
 
-import 'models/chat_model.dart';
-import 'chat_detail_page.dart';
+import 'package:wetrack/models/chat_model.dart';
+import 'package:wetrack/services/chat_detail_page.dart';
 
 // Placeholder Pages (for Navigation consistency)
 class PlaceholderPage extends StatelessWidget {
@@ -11,9 +11,9 @@ class PlaceholderPage extends StatelessWidget {
   const PlaceholderPage(this.title, {super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title)),
-    body: Center(child: Text('Placeholder for $title')),
-  );
+        appBar: AppBar(title: Text(title)),
+        body: Center(child: Text('Placeholder for $title')),
+      );
 }
 
 class ChatListPage extends StatelessWidget {
@@ -181,9 +181,8 @@ class ChatListPage extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: isUnread
-                        ? const Color(0xFF00A7A7)
-                        : Colors.grey[600],
+                    color:
+                        isUnread ? const Color(0xFF00A7A7) : Colors.grey[600],
                     fontWeight: isUnread ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
