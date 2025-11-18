@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/user/user_homepage.dart';
-import 'signup_page.dart';
+import 'screens/signup_page.dart';
 
 class SignInPage extends StatefulWidget {
   final String role;
