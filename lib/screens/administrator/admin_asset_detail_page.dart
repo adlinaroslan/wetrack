@@ -9,7 +9,16 @@ class TechnicianAssetDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Detail Asset Info"),
-        backgroundColor: const Color(0xFF00A7A7),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

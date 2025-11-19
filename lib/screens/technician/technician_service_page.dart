@@ -53,13 +53,25 @@ class _TechnicianServicePageState extends State<TechnicianServicePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF00BFA6),
-        title: const Text(
-          'Services',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        elevation: 0,
+        title: const Text("Service Request"),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
         bottom: TabBar(
           controller: _tabController,
+          // 🟢 KEY CHANGE 1: Set the selected tab label color to white
+          labelColor: Colors.white,
+          // 🟢 KEY CHANGE 2: Set the unselected tab label color to a lighter white for contrast
+          unselectedLabelColor: Colors.white70,
+          // 🟢 KEY CHANGE 3: Set the indicator (underline) color to white
+          indicatorColor: Colors.white,
           tabs: const [
             Tab(text: 'On Progress'),
             Tab(text: 'Fixed'),
@@ -109,7 +121,7 @@ class _TechnicianServicePageState extends State<TechnicianServicePage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha:0.2),
+                    color: statusColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

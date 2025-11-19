@@ -270,11 +270,19 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF00BFA6),
           elevation: 0,
           leading: BackButton(color: Colors.white),
           title: const Text('Requests',
               style: TextStyle(fontWeight: FontWeight.bold)),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
           bottom: const TabBar(
             indicatorColor: Colors.white,
             tabs: [

@@ -10,8 +10,6 @@ import 'package:wetrack/screens/logout.dart';
 import 'package:wetrack/screens/user/user_scan_qr_page.dart';
 import 'package:wetrack/screens/splash_screen.dart';
 
-
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

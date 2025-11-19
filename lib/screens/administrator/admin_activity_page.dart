@@ -31,7 +31,16 @@ class AdminActivityPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Asset Tracking"),
-        backgroundColor: const Color(0xFF00A7A7),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -97,7 +106,7 @@ class AdminActivityPage extends StatelessWidget {
           ],
         ),
       ),
-    bottomNavigationBar: const FooterNav(),
+      bottomNavigationBar: const FooterNav(),
     );
   }
 }

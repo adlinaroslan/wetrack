@@ -19,7 +19,16 @@ class TechnicianServiceDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Detail"),
-        backgroundColor: const Color(0xFF00BFA6),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -45,7 +54,7 @@ class TechnicianServiceDetailPage extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha:0.2),
+                      color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

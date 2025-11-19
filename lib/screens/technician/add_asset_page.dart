@@ -73,8 +73,17 @@ class _AddAssetPageState extends State<AddAssetPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF00BFA6),
+        elevation: 0,
         title: const Text("Add New Asset"),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -110,7 +119,7 @@ class _AddAssetPageState extends State<AddAssetPage> {
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF00BFA6),
+                            color: const Color(0xFF00A7A7),
                             border: Border.all(color: Colors.white, width: 2),
                           ),
                           padding: const EdgeInsets.all(6),
@@ -215,7 +224,8 @@ class _AddAssetPageState extends State<AddAssetPage> {
               Center(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00BFA6),
+                    backgroundColor: const Color(0xFF00A7A7),
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 40, vertical: 14),
                     shape: RoundedRectangleBorder(

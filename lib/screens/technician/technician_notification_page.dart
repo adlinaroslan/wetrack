@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/footer_nav.dart';
 
 class TechnicianNotificationPage extends StatelessWidget {
   const TechnicianNotificationPage({super.key});
@@ -35,7 +36,16 @@ class TechnicianNotificationPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Notifications"),
-        backgroundColor: const Color(0xFF00A7A7),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16.0),
@@ -88,16 +98,7 @@ class TechnicianNotificationPage extends StatelessWidget {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: const Color(0xFF00A7A7),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.qr_code_scanner), label: "Scan"),
-          BottomNavigationBarItem(icon: Icon(Icons.logout), label: "Logout"),
-        ],
-      ),
+      bottomNavigationBar: const FooterNav(),
     );
   }
 }

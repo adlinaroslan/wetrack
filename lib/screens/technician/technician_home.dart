@@ -31,11 +31,19 @@ class TechnicianHomePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: const Color(0xFF00BFA6),
         elevation: 0,
         title: const Text(
           "WeTrack.",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
         actions: [
           IconButton(
@@ -127,8 +135,17 @@ class TechnicianHomePage extends StatelessWidget {
                     elevation: 2,
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF00BFA6).withValues(alpha:0.15),
-                        child: const Icon(Icons.build, color: Color(0xFF00BFA6)),
+                        backgroundColor:
+                            const Color(0xFF00BFA6).withValues(alpha: 0.15),
+                        child: ShaderMask(
+                          shaderCallback: (Rect bounds) => const LinearGradient(
+                            colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ).createShader(bounds),
+                          blendMode: BlendMode.srcIn,
+                          child: const Icon(Icons.build, color: Colors.white),
+                        ),
                       ),
                       title: Text(s["id"]!),
                       subtitle: Text(s["type"]!),
@@ -138,7 +155,7 @@ class TechnicianHomePage extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: color.withValues(alpha:0.18),
+                          color: color.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -160,7 +177,7 @@ class TechnicianHomePage extends StatelessWidget {
       ),
 
       // Footer
-      bottomNavigationBar: const FooterNav(),
+      bottomNavigationBar: const FooterNav(role: 'Technician'),
     );
   }
 
@@ -171,7 +188,8 @@ class TechnicianHomePage extends StatelessWidget {
     required Widget page,
   }) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+      onTap: () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
       child: Column(
         children: [
           Container(
@@ -188,7 +206,15 @@ class TechnicianHomePage extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, size: 35, color: const Color(0xFF00BFA6)),
+            child: ShaderMask(
+              shaderCallback: (Rect bounds) => const LinearGradient(
+                colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              blendMode: BlendMode.srcIn,
+              child: Icon(icon, size: 35, color: Colors.white),
+            ),
           ),
           const SizedBox(height: 8),
           Text(

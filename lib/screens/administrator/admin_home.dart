@@ -37,16 +37,46 @@ class _AdminHomePageState extends State<AdminHomePage> {
   // Sample monthly usage data for multiple years
   final Map<String, Map<String, int>> _yearlyUsage = {
     '2021': {
-      "Jan": 5, "Feb": 8, "Mar": 3, "Apr": 10, "May": 7, "Jun": 6,
-      "Jul": 9, "Aug": 4, "Sep": 11, "Oct": 6, "Nov": 8, "Dec": 7,
+      "Jan": 5,
+      "Feb": 8,
+      "Mar": 3,
+      "Apr": 10,
+      "May": 7,
+      "Jun": 6,
+      "Jul": 9,
+      "Aug": 4,
+      "Sep": 11,
+      "Oct": 6,
+      "Nov": 8,
+      "Dec": 7,
     },
     '2022': {
-      "Jan": 6, "Feb": 9, "Mar": 4, "Apr": 11, "May": 6, "Jun": 7,
-      "Jul": 10, "Aug": 5, "Sep": 12, "Oct": 7, "Nov": 9, "Dec": 8,
+      "Jan": 6,
+      "Feb": 9,
+      "Mar": 4,
+      "Apr": 11,
+      "May": 6,
+      "Jun": 7,
+      "Jul": 10,
+      "Aug": 5,
+      "Sep": 12,
+      "Oct": 7,
+      "Nov": 9,
+      "Dec": 8,
     },
     '2023': {
-      "Jan": 7, "Feb": 10, "Mar": 5, "Apr": 12, "May": 8, "Jun": 9,
-      "Jul": 11, "Aug": 6, "Sep": 13, "Oct": 8, "Nov": 10, "Dec": 9,
+      "Jan": 7,
+      "Feb": 10,
+      "Mar": 5,
+      "Apr": 12,
+      "May": 8,
+      "Jun": 9,
+      "Jul": 11,
+      "Aug": 6,
+      "Sep": 13,
+      "Oct": 8,
+      "Nov": 10,
+      "Dec": 9,
     },
   };
 
@@ -68,11 +98,19 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
       // Top Bar
       appBar: AppBar(
-        backgroundColor: const Color(0xFF00BFA6),
         elevation: 0,
         title: const Text(
           "WeTrack.",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
         actions: [
           IconButton(
@@ -202,13 +240,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
         ),
       ),
 
-      bottomNavigationBar: const FooterNav(),
+      bottomNavigationBar: const FooterNav(role: 'Administrator'),
     );
   }
 
   // Feature Card
   Widget _featureCard(BuildContext context,
-      {required IconData icon, required String title, required VoidCallback onTap}) {
+      {required IconData icon,
+      required String title,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -221,7 +261,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
               borderRadius: BorderRadius.circular(15),
               boxShadow: const [
                 BoxShadow(
-                    color: Color(0x1A000000), blurRadius: 4, offset: Offset(0, 2)),
+                    color: Color(0x1A000000),
+                    blurRadius: 4,
+                    offset: Offset(0, 2)),
               ],
             ),
             child: Icon(icon, size: 35, color: const Color(0xFF00BFA6)),
@@ -235,7 +277,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   // Asset Info Card
   Widget _infoCard(
-      {required IconData icon, required String title, required String subtitle}) {
+      {required IconData icon,
+      required String title,
+      required String subtitle}) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
@@ -301,7 +345,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
           child: BarChart(
             BarChartData(
               alignment: BarChartAlignment.spaceAround,
-              maxY: (usageValues.reduce((a, b) => a > b ? a : b)).toDouble() + 2,
+              maxY:
+                  (usageValues.reduce((a, b) => a > b ? a : b)).toDouble() + 2,
               barTouchData: BarTouchData(enabled: true),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
@@ -326,8 +371,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(showTitles: true, interval: 2),
                 ),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(usageValues.length, (index) {
