@@ -77,38 +77,29 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF9F9),
-
-      // ▶ FIXED: bottomNavigationBar moved outside Stack
       bottomNavigationBar: _buildBottomNav(context),
-
       body: Stack(
         children: [
           _buildTopBackground(),
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final bottomPadding =
-                    MediaQuery.of(context).padding.bottom + 90;
+            // Added padding bottom to avoid overlap with the floating nav bar
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAppBar(context),
+                  const SizedBox(height: 20),
+                  _buildIconRow(context),
+                  const SizedBox(height: 20), // Reduced gap slightly
 
-                return SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPadding),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight, // ← prevents overflow
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildAppBar(context),
-                        const SizedBox(height: 30),
-                        _buildIconRow(context),
-                        const SizedBox(height: 25),
-                        _buildGridCards(context),
-                      ],
-                    ),
+                  // Expanded forces the Grid to take ONLY the remaining space
+                  // preventing the page from needing to scroll.
+                  Expanded(
+                    child: _buildGridCards(context),
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ),
         ],
@@ -259,14 +250,18 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 🟩 GRID CARDS
+  // 🟩 GRID CARDS (Adjusted for fixed page)
   Widget _buildGridCards(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      // Allows the grid to scroll internally IF the phone is very small,
+      // but keeps the main page static.
+      physics: const ClampingScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
+
+      childAspectRatio: 0.85,
+
       children: [
         _buildCard(context, "My Requests", Icons.list_alt, "2 Current Requests",
             const UserMyRequestsPage()),
@@ -280,55 +275,91 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 🟦 CARD BUILDER (FIXED)
+  // 🟦 CARD BUILDER (SMOOTH CURVE VERSION)
   Widget _buildCard(BuildContext context, String title, IconData icon,
       String subtitle, Widget page) {
     return GestureDetector(
       onTap: () =>
           Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
       child: Container(
+        // Shadow and Border Radius for the whole card
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Column(
+          child: Stack(
             children: [
-              // top curved gradient
-              Container(
-                height: 110,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF00A7A7), Color(0xFF69D9D9)],
+              // LAYER 1: Background Color (Light Blue)
+              // This fills the entire card behind everything
+              Container(color: const Color.fromARGB(255, 224, 255, 252)),
+
+              // LAYER 2: The Curved Header
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 100, // Fixed height for the curve area
+                child: ClipPath(
+                  clipper: CurveClipper(), // <--- USES THE NEW CLASS
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
                   ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.elliptical(200, 100),
-                    topRight: Radius.elliptical(200, 100),
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, color: Colors.white, size: 38),
-                    const SizedBox(height: 20),
-                    Text(title,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16)),
-                  ],
                 ),
               ),
 
-              Container(
-                height: 80, // bigger
-                width: double.infinity,
-                color: const Color.fromARGB(255, 224, 255, 252),
-                alignment: Alignment.center,
-                child: _styledSubtitleVertical(subtitle),
+              // LAYER 3: The Content (Icon & Text)
+              // We use a Column with Expanded to arrange items safely
+              Column(
+                children: [
+                  // Top Half (Over the gradient)
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, color: Colors.white, size: 32),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Bottom Half (Over the light blue)
+                  Expanded(
+                    flex: 6,
+                    child: Container(
+                      alignment: Alignment.center,
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(
+                          top: 10), // Push text down slightly
+                      child: _styledSubtitleVertical(subtitle),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -416,4 +447,29 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+class CurveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    // 1. Start at top-left
+    path.lineTo(0, size.height - 30);
+
+    // 2. Draw the curve (Control Point, End Point)
+    // The control point pulls the line downwards to create the curve
+    var controlPoint = Offset(size.width / 2, size.height + 20);
+    var endPoint = Offset(size.width, size.height - 30);
+
+    path.quadraticBezierTo(
+        controlPoint.dx, controlPoint.dy, endPoint.dx, endPoint.dy);
+
+    // 3. Finish the path
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
