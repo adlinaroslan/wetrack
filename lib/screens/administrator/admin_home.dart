@@ -244,7 +244,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Feature Card
   Widget _featureCard(BuildContext context,
       {required IconData icon,
       required String title,
@@ -257,16 +256,34 @@ class _AdminHomePageState extends State<AdminHomePage> {
             height: 70,
             width: 70,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white, // background stays white
               borderRadius: BorderRadius.circular(15),
               boxShadow: const [
                 BoxShadow(
-                    color: Color(0x1A000000),
-                    blurRadius: 4,
-                    offset: Offset(0, 2)),
+                  color: Color(0x1A000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
               ],
             ),
-            child: Icon(icon, size: 35, color: const Color(0xFF00BFA6)),
+
+            // Gradient icon
+            child: Center(
+              child: ShaderMask(
+                shaderCallback: (Rect bounds) {
+                  return const LinearGradient(
+                    colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(bounds);
+                },
+                child: Icon(
+                  icon,
+                  size: 35,
+                  color: Colors.white, // required for ShaderMask
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 8),
           Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -276,17 +293,38 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   // Asset Info Card
-  Widget _infoCard(
-      {required IconData icon,
-      required String title,
-      required String subtitle}) {
+  Widget _infoCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: const Color(0xFF00BFA6).withAlpha(38),
-          child: Icon(icon, color: const Color(0xFF00BFA6)),
+        leading: Container(
+          width: 45,
+          height: 45,
+          decoration: BoxDecoration(
+            color: const Color(0xFF00BFA6).withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: ShaderMask(
+              shaderCallback: (bounds) {
+                return const LinearGradient(
+                  colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds);
+              },
+              child: Icon(
+                icon,
+                size: 28,
+                color: Colors.white, // Required for ShaderMask
+              ),
+            ),
+          ),
         ),
         title: Text(title),
         subtitle: Text(subtitle),
@@ -383,9 +421,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   barRods: [
                     BarChartRodData(
                       toY: usageValues[index].toDouble(),
-                      color: const Color(0xFF00BFA6),
                       width: 14,
                       borderRadius: BorderRadius.circular(4),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF004C5C), Color(0xFF00A7A7)],
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                      ),
                     ),
                   ],
                 );

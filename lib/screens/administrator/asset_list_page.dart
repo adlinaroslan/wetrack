@@ -149,7 +149,8 @@ class _AssetListPageState extends State<AssetListPage> {
               alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00BFA6),
+                  backgroundColor: const Color(0xFF00A7A7),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),

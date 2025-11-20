@@ -271,7 +271,7 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
-          leading: BackButton(color: Colors.white),
+          leading: const BackButton(color: Colors.white),
           title: const Text('Requests',
               style: TextStyle(fontWeight: FontWeight.bold)),
           flexibleSpace: Container(
@@ -283,11 +283,13 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
               ),
             ),
           ),
-          bottom: const TabBar(
+          bottom: TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
-            tabs: [
+            tabs: const [
               Tab(text: "In Progress"),
-              Tab(text: "Approved requests"),
+              Tab(text: "Approved Requests"),
             ],
           ),
         ),
