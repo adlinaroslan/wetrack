@@ -31,7 +31,8 @@ class LogoutPage extends StatelessWidget {
         child: Center(
           child: Container(
             width: MediaQuery.of(context).size.width * 0.85,
-            padding: const EdgeInsets.all(24),
+            // 🔹 UPDATED: Increased vertical padding to make the box "higher"
+            padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 24),
             decoration: BoxDecoration(
               color: Colors.white.withAlpha(242),
               borderRadius: BorderRadius.circular(20),
@@ -56,12 +57,12 @@ class LogoutPage extends StatelessWidget {
                   'You are logged in as $role.\nAre you sure you want to log out?',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 16, // 🔹 UPDATED: Made font smaller (was 22)
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF333333),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40), // Added a bit more spacing
 
                 // ✅ Log Out Button
                 SizedBox(
@@ -94,7 +95,8 @@ class LogoutPage extends StatelessWidget {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize:
+                                14, // 🔹 UPDATED: Made font smaller (was 16)
                           ),
                         ),
                       ],
@@ -130,7 +132,8 @@ class LogoutPage extends StatelessWidget {
                           style: TextStyle(
                             color: Color(0xFF004C5C),
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize:
+                                14, // 🔹 UPDATED: Made font smaller (was 16)
                           ),
                         ),
                       ],
