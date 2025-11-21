@@ -9,7 +9,6 @@ import 'user_request_asset.dart';
 
 class ListAssetPage extends StatefulWidget {
   const ListAssetPage({super.key});
-
   @override
   State<ListAssetPage> createState() => _ListAssetPageState();
 }

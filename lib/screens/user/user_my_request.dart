@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
 import 'package:wetrack/services/chat_list_page.dart';
-import 'package:wetrack/screens/logout.dart';
+import 'package:wetrack/screens/user/logout_page.dart';
 import '../../services/firestore_service.dart';
 import '../../models/request_model.dart';
 import 'user_request_edit.dart';
@@ -21,7 +21,11 @@ class _UserMyRequestsPageState extends State<UserMyRequestsPage> {
   Widget build(BuildContext context) {
     final fs = FirestoreService();
     final uid = widget.userId;
-    final bottomPadding = MediaQuery.of(context).padding.bottom + 80;
+    // FIX: Changed bottomPadding calculation.
+    // The previous bottomPadding = MediaQuery.of(context).padding.bottom + 80
+    // combined with a bottomNavBar of height 70 caused the overflow.
+    // We only need padding for the BottomNavigationBar's height (70) plus a small buffer (e.g., 20).
+    final bottomPadding = MediaQuery.of(context).padding.bottom + 70 + 20;
 
     final sampleRequests = [
       {

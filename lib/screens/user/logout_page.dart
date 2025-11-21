@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:wetrack/screens/role_selection.dart';
 
 class LogoutPage extends StatelessWidget {
-  const LogoutPage({super.key});
+  final String role; // 'Administrator' or 'Technician'
+
+  const LogoutPage({super.key, this.role = 'User'});
 
   @override
   Widget build(BuildContext context) {
@@ -10,11 +12,19 @@ class LogoutPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Log Out'),
         centerTitle: true,
-        backgroundColor: const Color(0xFF00A7A7),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
       ),
       body: Container(
@@ -29,7 +39,8 @@ class LogoutPage extends StatelessWidget {
         child: Center(
           child: Container(
             width: MediaQuery.of(context).size.width * 0.85,
-            padding: const EdgeInsets.all(24),
+            // 🔹 UPDATED: Increased vertical padding to make the box "higher"
+            padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 24),
             decoration: BoxDecoration(
               color: Colors.white.withAlpha(242),
               borderRadius: BorderRadius.circular(20),
@@ -50,16 +61,16 @@ class LogoutPage extends StatelessWidget {
                   size: 90,
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  "Are you sure you want to log out?",
+                Text(
+                  'You are logged in as $role.\nAre you sure you want to log out?',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 22,
+                  style: const TextStyle(
+                    fontSize: 16, // 🔹 UPDATED: Made font smaller (was 22)
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF333333),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40), // Added a bit more spacing
 
                 // ✅ Log Out Button
                 SizedBox(
@@ -92,7 +103,8 @@ class LogoutPage extends StatelessWidget {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize:
+                                14, // 🔹 UPDATED: Made font smaller (was 16)
                           ),
                         ),
                       ],
@@ -128,7 +140,8 @@ class LogoutPage extends StatelessWidget {
                           style: TextStyle(
                             color: Color(0xFF004C5C),
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize:
+                                14, // 🔹 UPDATED: Made font smaller (was 16)
                           ),
                         ),
                       ],

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wetrack/services/chat_list_page.dart';
-import 'package:wetrack/screens/logout.dart';
+import 'package:wetrack/screens/user/logout_page.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
 

@@ -7,7 +7,7 @@ import 'user_my_request.dart';
 import 'user_asset_inuse.dart';
 import 'user_return_asset.dart';
 import 'user_history.dart';
-import 'package:wetrack/screens/logout.dart';
+import 'package:wetrack/screens/user/logout_page.dart';
 import 'user_notification.dart';
 import 'package:wetrack/services/chat_list_page.dart';
 import 'user_profile_page.dart';
