@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/asset_model.dart';
 
-class AssetDetailPage extends StatelessWidget {
+class IUI extends StatelessWidget {
   final Asset asset;
 
-  const AssetDetailPage({required this.asset, super.key});
+  const IUI({required this.asset, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +25,16 @@ class AssetDetailPage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Asset Information",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            _buildInfoCard(asset),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("Asset Information",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              _buildInfoCard(asset),
+            ],
+          ),
         ),
       ),
     );
@@ -44,32 +46,39 @@ class AssetDetailPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _infoRow("Asset ID", asset.id),
-          _infoRow("Asset Brand", asset.brand),
+          _infoRow("Serial Number", asset.serialNumber), // Added Serial Number
           _infoRow("Asset Name", asset.name),
+          _infoRow("Brand", asset.brand),
+          _infoRow("Category", asset.category),
+          _infoRow("Status", asset.status),
+          _infoRow("Location", asset.location),
           _infoRow("Register Date", asset.registerDate),
-          _infoRow("Asset Status", asset.status),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Image.asset(asset.imagePath, height: 60),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(asset.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text("Register Date: ${asset.registerDate ?? 'N/A'}",
-                      style: const TextStyle(color: Colors.grey)),
-                ],
-              ),
-            ],
+          _infoRow("Borrowed By", asset.borrowedByUserId),
+          _infoRow(
+            "Due Date",
+            asset.dueDateTime != null
+                ? asset.dueDateTime!.toLocal().toString().split(' ')[0]
+                : '-',
           ),
+          const SizedBox(height: 12),
+          if (asset.imageUrl.isNotEmpty)
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  asset.imageUrl,
+                  height: 150,
+                  width: 150,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -82,8 +91,7 @@ class AssetDetailPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.black54)),
-          Text(value ?? 'N/A',
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(value ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );

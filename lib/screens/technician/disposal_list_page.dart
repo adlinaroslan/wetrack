@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/asset_model.dart';
 
 class DisposalListPage extends StatelessWidget {
@@ -6,29 +7,10 @@ class DisposalListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final disposedAssets = [
-      Asset(
-          id: 'X1001',
-          name: 'Old Dell Laptop',
-          brand: 'Dell',
-          category: 'Laptop',
-          registerDate: '01 Jan 2020',
-          status: 'Disposed',
-          imagePath: 'assets/images/dell.jpg'),
-      Asset(
-          id: 'X2002',
-          name: 'Broken HDMI Cable',
-          brand: 'Ugreen',
-          category: 'Cable',
-          registerDate: '05 Feb 2021',
-          status: 'Disposed',
-          imagePath: 'assets/images/hdmic.jpeg'),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: const Text("Disposed Assets"),
+        title: const Text("Disposal List"),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -39,23 +21,52 @@ class DisposalListPage extends StatelessWidget {
           ),
         ),
       ),
-      body: ListView.builder(
+      body: Padding(
         padding: const EdgeInsets.all(16),
-        itemCount: disposedAssets.length,
-        itemBuilder: (context, index) {
-          final asset = disposedAssets[index];
-          return Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: ListTile(
-              leading: Image.asset(asset.imagePath, height: 40),
-              title: Text(asset.name),
-              subtitle: Text("ID: ${asset.id} | ${asset.brand}"),
-              trailing:
-                  const Text("Disposed", style: TextStyle(color: Colors.red)),
-            ),
-          );
-        },
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('assets')
+              .where('status', isEqualTo: 'Disposed')
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Center(child: Text("No disposed assets found."));
+            }
+
+            final disposedAssets = snapshot.data!.docs
+                .map((doc) => Asset.fromFirestore(doc))
+                .toList();
+
+            return ListView.builder(
+              itemCount: disposedAssets.length,
+              itemBuilder: (context, index) {
+                final asset = disposedAssets[index];
+                return Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading: Image.asset(
+                      asset.imageUrl,
+                      height: 40,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.image_not_supported),
+                    ),
+                    title: Text(asset.name),
+                    subtitle: Text("ID: ${asset.id} | ${asset.brand}"),
+                    trailing: const Text(
+                      "Disposed",
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
