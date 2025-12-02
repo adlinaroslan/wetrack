@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/asset_model.dart';
 import 'admin_asset_detail_page.dart';
 import '../../widgets/footer_nav.dart';
 
@@ -7,25 +8,44 @@ class AdminActivityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> assets = [
-      {
-        'assetId': 'A67495',
-        'assetName': 'Dell Laptop',
-        'blNumber': 'BL12345',
-        'user': 'Nurul Adlina'
-      },
-      {
-        'assetId': 'AD3535',
-        'assetName': 'My Name',
-        'blNumber': 'BL12346',
-        'user': 'PT. Example 1'
-      },
-      {
-        'assetId': 'AD3636',
-        'assetName': 'My Name',
-        'blNumber': 'BL12347',
-        'user': 'PT. Example 1'
-      },
+    // Dummy Assets (MUST match Asset model)
+    final List<Asset> assets = [
+      Asset(
+        docId: "1",
+        id: "A67495",
+        serialNumber: "SN-001",
+        name: "Dell Laptop",
+        brand: "Dell",
+        category: "Laptop",
+        imageUrl: "assets/default.png",
+        location: "HQ Office",
+        status: "Active",
+        registerDate: "2024-02-01",
+      ),
+      Asset(
+        docId: "2",
+        id: "AD3535",
+        serialNumber: "SN-002",
+        name: "My Name",
+        brand: "Brand X",
+        category: "Device",
+        imageUrl: "assets/default.png",
+        location: "HQ Office",
+        status: "Active",
+        registerDate: "2024-03-01",
+      ),
+      Asset(
+        docId: "3",
+        id: "AD3636",
+        serialNumber: "SN-003",
+        name: "My Name",
+        brand: "Brand Y",
+        category: "Device",
+        imageUrl: "assets/default.png",
+        location: "HQ Office",
+        status: "Active",
+        registerDate: "2024-04-01",
+      ),
     ];
 
     return Scaffold(
@@ -60,24 +80,27 @@ class AdminActivityPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+
+            // LISTVIEW FIXED
             Expanded(
               child: ListView.builder(
                 itemCount: assets.length,
                 itemBuilder: (context, index) {
                   final asset = assets[index];
+
                   return Card(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                     elevation: 2,
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     child: ListTile(
-                      title: Text("Asset ID: ${asset['assetId']}"),
+                      title: Text("Asset ID: ${asset.id}"),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Asset Name: ${asset['assetName']}"),
-                          Text("BL Number: ${asset['blNumber']}"),
-                          Text("User: ${asset['user']}"),
+                          Text("Asset Name: ${asset.name}"),
+                          Text("Serial Number: ${asset.serialNumber}"),
+                          Text("User: ${asset.location}"), // you can change later
                         ],
                       ),
                       trailing: TextButton(
@@ -85,8 +108,7 @@ class AdminActivityPage extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  TechnicianAssetDetailPage(asset: asset),
+                              builder: (_) => AssetDetailPage(asset: asset),
                             ),
                           );
                         },

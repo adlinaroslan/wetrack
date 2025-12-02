@@ -29,6 +29,7 @@ class Asset {
     this.dueDateTime,
   });
 
+  /// Convert Firestore document → Asset object
   factory Asset.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
 
@@ -54,6 +55,7 @@ class Asset {
     );
   }
 
+  /// Convert Asset → Firestore Map
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
@@ -70,4 +72,25 @@ class Asset {
           dueDateTime != null ? Timestamp.fromDate(dueDateTime!) : null,
     };
   }
+
+  /// Convert Asset → JSON (for QR Code)
+  Map<String, dynamic> toJson() {
+    return {
+      'docId': docId,
+      'id': id,
+      'serialNumber': serialNumber,
+      'name': name,
+      'brand': brand,
+      'category': category,
+      'imageUrl': imageUrl,
+      'location': location,
+      'status': status,
+      'registerDate': registerDate,
+      'borrowedByUserId': borrowedByUserId,
+      'dueDateTime': dueDateTime?.toIso8601String(),
+    };
+  }
+
+  /// QR-friendly string for QR Viewer
+  String get qrData => id; // Or JSON encode for full asset: jsonEncode(toJson());
 }

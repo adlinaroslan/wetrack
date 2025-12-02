@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../models/asset_model.dart';
+import 'qr_viewer_page.dart';
 
-class TechnicianAssetDetailPage extends StatelessWidget {
-  final Map<String, String> asset;
-  const TechnicianAssetDetailPage({super.key, required this.asset});
+class AssetDetailPage extends StatelessWidget {
+  final Asset asset;
+  const AssetDetailPage({super.key, required this.asset});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Detail Asset Info"),
+        title: const Text("Asset Details"),
         elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -26,12 +28,11 @@ class TechnicianAssetDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Asset Tracking",
+              "Asset Information",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
-            // Asset Info Card
             Card(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -41,50 +42,41 @@ class TechnicianAssetDetailPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Asset Info",
+                    const Text("General Info",
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 10),
-                    infoRow("Asset ID", asset['assetId']),
-                    infoRow("Asset Name", asset['assetName']),
-                    infoRow("Asset Type", "Electronics"),
-                    infoRow("User", asset['user']),
+                    infoRow("Asset ID", asset.id),
+                    infoRow("Name", asset.name),
+                    infoRow("Brand", asset.brand),
+                    infoRow("Category", asset.category),
+                    infoRow("Serial Number", asset.serialNumber),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
-            // Tracking Info
-            const Text(
-              "Tracking Info",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            infoRow("Asset ID", asset['assetId']),
-            infoRow("Asset Status", "Active", valueColor: Colors.green),
-            infoRow("Date Issued", "10 April 2025"),
-            infoRow("Return Date", "15 April 2025"),
-            infoRow("Condition", "Damaged", valueColor: Colors.red),
-            infoRow("Location", "Lab 4.0 B"),
-            const SizedBox(height: 16),
-
-            // Manifest Info
-            const Text(
-              "Manifest Info",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              width: double.infinity,
-              height: 60,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade400),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text("Item Descriptions"),
+            Center(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00A7A7),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.qr_code),
+                label: const Text("Generate QR Code"),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => QRViewerPage(asset: asset),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -95,13 +87,13 @@ class TechnicianAssetDetailPage extends StatelessWidget {
 
   Widget infoRow(String label, String? value, {Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
           Expanded(
             flex: 2,
             child: Text(
-              "$label :",
+              "$label:",
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
