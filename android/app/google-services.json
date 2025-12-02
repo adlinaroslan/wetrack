@@ -3,9 +3,7 @@
     "project_number": "421690155245",
     "project_id": "wetrack-fc09f",
     "storage_bucket": "wetrack-fc09f.firebasestorage.app"
-    
   },
-  
   "client": [
     {
       "client_info": {
