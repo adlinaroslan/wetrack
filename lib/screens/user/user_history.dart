@@ -330,7 +330,7 @@ Widget _buildBottomNavBar(BuildContext context) {
         elevation: 0,
         currentIndex: 0,
         selectedItemColor: const Color.fromARGB(255, 255, 255, 255),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor: const Color.fromARGB(255, 255, 255, 255),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(

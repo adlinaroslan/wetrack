@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-//import 'package:firebase_auth/firebase_auth.dart';
 import '../models/asset_model.dart';
 import '../models/request_model.dart';
 import '../models/user_model.dart';
@@ -7,14 +6,13 @@ import '../models/user_model.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Singleton instance
+  // Singleton Instance
   static final FirestoreService _instance = FirestoreService._internal();
-  factory FirestoreService() {
-    return _instance;
-  }
+  factory FirestoreService() => _instance;
   FirestoreService._internal();
 
-  // --- Collection References ---
+  // ---------------------- COLLECTION REFERENCES ----------------------
+
   CollectionReference<Asset> get assetsRef =>
       _db.collection('assets').withConverter<Asset>(
             fromFirestore: (snapshot, _) => Asset.fromFirestore(snapshot),
@@ -34,20 +32,18 @@ class FirestoreService {
             toFirestore: (user, _) => user.toFirestore(),
           );
 
-  // --- User Profile Management ---
+  // ---------------------- USER PROFILE ----------------------
 
-  // Fetches the user's detailed profile from Firestore
   Future<UserModel?> getUserProfile(String uid) async {
     final doc = await usersRef.doc(uid).get();
     return doc.exists ? doc.data() : null;
   }
 
-  // Creates a new user profile upon registration/first login
   Future<void> createUserProfile({
     required String uid,
     required String email,
     required String displayName,
-    String role = 'User', // Default role for new signups
+    String role = 'User',
   }) async {
     final newUser = UserModel(
       uid: uid,
@@ -59,37 +55,51 @@ class FirestoreService {
     await usersRef.doc(uid).set(newUser);
   }
 
-  // --- Real-Time Streams ---
+  // ---------------------- ASSET STREAMS ----------------------
 
   Stream<List<Asset>> getAvailableAssets() {
-    // Only fetch assets that are currently AVAILABLE
     return assetsRef
         .where('status', isEqualTo: 'AVAILABLE')
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
-  // NEW: Stream for assets currently borrowed by a specific user
   Stream<List<Asset>> getBorrowedAssets(String userId) {
-    // Assets that are marked as 'BORROWED' and linked to the current user's ID
     return assetsRef
         .where('status', isEqualTo: 'BORROWED')
         .where('borrowedByUserId', isEqualTo: userId)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
-  // --- Core Transaction: Asset Request ---
+  // ---------------------- REQUEST STREAMS ----------------------
+
+  Stream<List<AssetRequest>> getRequestsForUser(String userId) {
+    return requestsRef
+        .where('userId', isEqualTo: userId)
+        .orderBy('requestedDate', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
+  }
+
+  Stream<List<AssetRequest>> getAllRequests() {
+    return requestsRef
+        .orderBy('requestedDate', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
+  }
+
+  // ---------------------- CREATE REQUEST ----------------------
+
   Future<void> requestAsset({
     required String assetId,
     required String assetName,
     required DateTime requiredDate,
-    // Add user details to the request for easy admin viewing
     required String userId,
     required String userName,
   }) async {
     final newRequest = AssetRequest(
-      id: '', // Firestore will assign this
+      id: '',
       userId: userId,
       userName: userName,
       assetId: assetId,
@@ -99,30 +109,12 @@ class FirestoreService {
       status: 'PENDING',
     );
 
-    // 1. Create the request document
     await requestsRef.add(newRequest);
-
-    // 2. Optionally update the asset status to PENDING_REQUEST
     await assetsRef.doc(assetId).update({'status': 'PENDING_REQUEST'});
   }
 
-  // --- Request management ---
-  // Stream requests for a specific user (useful for 'My Requests' page)
-  Stream<List<AssetRequest>> getRequestsForUser(String userId) {
-    return requestsRef
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((d) => d.data()).toList());
-  }
+  // ---------------------- APPROVE REQUEST ----------------------
 
-  // Stream all requests (for admin)
-  Stream<List<AssetRequest>> getAllRequests() {
-    return requestsRef
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((d) => d.data()).toList());
-  }
-
-  // Approve a request: mark request approved, update asset to BORROWED and log history
   Future<void> approveRequest({
     required String requestId,
     required String assetId,
@@ -132,19 +124,21 @@ class FirestoreService {
     final requestDoc = requestsRef.doc(requestId);
     final assetDoc = assetsRef.doc(assetId);
 
+    // Fetch the asset name for notification
+    final assetSnap = await assetDoc.get();
+    final assetName = assetSnap.data()?.name ?? 'Asset';
+
     await _db.runTransaction((transaction) async {
-      // 1. Read request and asset
       final reqSnap = await transaction.get(requestDoc);
       if (!reqSnap.exists) throw Exception('Request not found');
 
-      final assetSnap = await transaction.get(assetDoc);
-      if (!assetSnap.exists) throw Exception('Asset not found');
+      // Update request
+      transaction.update(requestDoc, {
+        'status': 'APPROVED',
+        'approvedAt': FieldValue.serverTimestamp(),
+      });
 
-      // 2. Update request status
-      transaction.update(requestDoc,
-          {'status': 'APPROVED', 'approvedAt': FieldValue.serverTimestamp()});
-
-      // 3. Update asset status and borrower info
+      // Update asset
       transaction.update(assetDoc, {
         'status': 'BORROWED',
         'borrowedByUserId': borrowerUserId,
@@ -152,7 +146,7 @@ class FirestoreService {
         'location': 'With User',
       });
 
-      // 4. Add history entry
+      // History
       _db.collection('asset_history').add({
         'assetId': assetId,
         'action': 'BORROWED',
@@ -160,43 +154,74 @@ class FirestoreService {
         'timestamp': FieldValue.serverTimestamp(),
         'dueDateTime': Timestamp.fromDate(dueDate),
       });
+
+      // NOTIFICATION: Request Approved
+      _db.collection('notifications').doc().set({
+        'userId': borrowerUserId,
+        'title': 'Request Approved ✅',
+        'message':
+            'Your request for **$assetName** (ID: $assetId) has been approved.\nDue Date: ${dueDate.toLocal().toString().split(" ").first}',
+        'type': 'request_approved',
+        'timestamp': FieldValue.serverTimestamp(),
+        'read': false,
+        'relatedId': requestId,
+      });
     });
   }
 
-  // Decline a request: mark request rejected and reset asset status if it was set to pending
+  // ---------------------- DECLINE REQUEST ----------------------
+
   Future<void> declineRequest({
     required String requestId,
     required String assetId,
+    required String borrowerUserId,
   }) async {
     final requestDoc = requestsRef.doc(requestId);
     final assetDoc = assetsRef.doc(assetId);
+
+    final assetSnap = await assetDoc.get();
+    final assetName = assetSnap.data()?.name ?? 'Asset';
 
     await _db.runTransaction((transaction) async {
       final reqSnap = await transaction.get(requestDoc);
       if (!reqSnap.exists) throw Exception('Request not found');
 
-      transaction.update(requestDoc,
-          {'status': 'REJECTED', 'rejectedAt': FieldValue.serverTimestamp()});
+      transaction.update(
+        requestDoc,
+        {'status': 'DECLINED', 'rejectedAt': FieldValue.serverTimestamp()},
+      );
 
-      // If asset was marked as pending, reset to AVAILABLE
-      final assetSnap = await transaction.get(assetDoc);
-      if (assetSnap.exists) {
-        final assetObj = assetSnap.data(); // typed Asset (from converter)
-        final currentStatus = assetObj != null ? assetObj.status : '';
-        if (currentStatus == 'PENDING_REQUEST') {
-          transaction.update(assetDoc, {'status': 'AVAILABLE'});
-        }
+      final assetSnapInside = await transaction.get(assetDoc);
+      final assetObj = assetSnapInside.data();
+      final currentStatus = assetObj?.status ?? '';
+
+      if (currentStatus == 'PENDING_REQUEST') {
+        transaction.update(assetDoc, {'status': 'AVAILABLE'});
       }
+
+      // NOTIFICATION: Request Declined
+      _db.collection('notifications').doc().set({
+        'userId': borrowerUserId,
+        'title': 'Request Declined ❌',
+        'message':
+            'Your request for **$assetName** (ID: $assetId) was declined by the administrator.',
+        'type': 'request_declined',
+        'timestamp': FieldValue.serverTimestamp(),
+        'read': false,
+        'relatedId': requestId,
+      });
     });
   }
 
-  // Update an existing request document
+  // ---------------------- UPDATE REQUEST ----------------------
+
   Future<void> updateRequest(
       String requestId, Map<String, dynamic> updates) async {
     await requestsRef.doc(requestId).update(updates);
   }
 
-  // --- Core Transaction: Asset Return ---
+  // ---------------------- CONFIRM RETURN ----------------------
+
   Future<void> confirmReturn({
     required String assetId,
     required String condition,
@@ -204,31 +229,46 @@ class FirestoreService {
   }) async {
     final assetDocRef = assetsRef.doc(assetId);
 
-    // Use a Firestore transaction to ensure atomicity
     await _db.runTransaction((transaction) async {
-      // 1. Read the current asset data
-      final assetSnapshot = await transaction.get(assetDocRef);
-      if (!assetSnapshot.exists) {
-        throw Exception("Asset not found for return: $assetId");
-      }
-      final currentAsset = assetSnapshot.data();
+      final snap = await transaction.get(assetDocRef);
+      if (!snap.exists) throw Exception("Asset not found");
 
-      // 2. Update the asset status and remove borrower details
+      final asset = snap.data();
+      final borrowerId = asset?.borrowedByUserId ?? 'N/A';
+
       transaction.update(assetDocRef, {
-        'status': 'AVAILABLE', // Reset to available
+        'status': 'AVAILABLE',
         'borrowedByUserId': FieldValue.delete(),
         'dueDateTime': FieldValue.delete(),
       });
 
-      // 3. Log the return transaction in a separate 'history' collection
       _db.collection('asset_history').add({
         'assetId': assetId,
         'action': 'RETURNED',
         'condition': condition,
         'comments': comments,
-        'returnedByUserId': currentAsset?.borrowedByUserId ?? 'N/A',
+        'returnedByUserId': borrowerId,
         'timestamp': FieldValue.serverTimestamp(),
       });
+    });
+  }
+
+  // ---------------------- NOTIFICATIONS ----------------------
+
+  /// Stream notifications for a specific user
+  Stream<List<Map<String, dynamic>>> getUserNotifications(String userId) {
+    return _db
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
+  }
+
+  /// Mark notification as read
+  Future<void> markNotificationAsRead(String notificationId) async {
+    await _db.collection('notifications').doc(notificationId).update({
+      'read': true,
     });
   }
 }

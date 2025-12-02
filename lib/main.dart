@@ -6,7 +6,7 @@ import 'package:wetrack/screens/user/user_homepage.dart';
 import 'package:wetrack/screens/user/user_list_asset.dart';
 import 'package:wetrack/screens/user/user_asset_request.dart';
 import 'package:wetrack/screens/user/user_notification.dart';
-import 'package:wetrack/screens/logout.dart';
+import 'package:wetrack/screens/user/logout_page.dart';
 import 'package:wetrack/screens/user/user_scan_qr_page.dart';
 import 'package:wetrack/screens/splash_screen.dart';
 

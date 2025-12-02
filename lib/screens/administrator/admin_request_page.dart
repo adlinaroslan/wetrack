@@ -1,7 +1,7 @@
 // lib/pages/admin/admin_request_page.dart
 import 'package:flutter/material.dart';
 import '../../models/request_model.dart';
-import '../../services/firestore_service.dart';
+import 'package:wetrack/services/firestore_service.dart';
 import 'admin_request_detail.dart';
 
 class AdminRequestPage extends StatefulWidget {
@@ -148,7 +148,11 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                               onPressed: () async {
                                 try {
                                   await _fs.declineRequest(
-                                      requestId: r.id, assetId: r.assetId);
+                                    requestId: r.id,
+                                    assetId: r.assetId,
+                                    // 💡 CORRECTED: Pass the required borrowerUserId
+                                    borrowerUserId: r.userId,
+                                  );
                                   if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -161,11 +165,9 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                                           content: Text('Decline failed: $e')));
                                 }
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                              ),
+                              // ... rest of the button style
                               child: const Text("Decline"),
-                            ),
+                            )
                           ],
                         )
                       else

@@ -40,7 +40,7 @@ class UserReturnAssetPage extends StatelessWidget {
                       "Return Asset",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -164,19 +164,25 @@ class UserReturnAssetPage extends StatelessWidget {
     );
   }
 
-  // --- UPDATED _assetCard Widget with Colored Badges ---
+  // --- REVISED _assetCard Widget ---
   Widget _assetCard(
     BuildContext context, {
     required String image,
     required String name,
     required String date,
     required String status,
-    required Color color,
+    required Color
+        color, // This parameter is now redundant but kept for consistency
   }) {
-    // 1. Determine the status color based on the status string
-    Color statusBgColor;
-    Color statusTextColor = Colors.white; // Text color is white for contrast
+    // Define the main gradient (copied from the class)
+    const LinearGradient mainGradient = LinearGradient(
+      colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
 
+    // Determine the status color based on the status string
+    Color statusBgColor;
     if (status == 'Overdue') {
       statusBgColor = Colors.red.shade600;
     } else if (status == 'In-use') {
@@ -184,24 +190,27 @@ class UserReturnAssetPage extends StatelessWidget {
     } else {
       statusBgColor = Colors.grey.shade600;
     }
+    const Color statusTextColor = Colors.white;
 
     return Container(
+      margin:
+          const EdgeInsets.only(bottom: 15), // Added margin to separate cards
       decoration: BoxDecoration(
         gradient: mainGradient,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16), // Slightly smaller radius
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(38),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           onTap: () {
             // Navigate to details page
             final assetId = name.replaceAll(' ', '_').toLowerCase();
@@ -220,18 +229,20 @@ class UserReturnAssetPage extends StatelessWidget {
             );
           },
           child: Padding(
+            // Reduced Padding for a tighter fit
             padding: const EdgeInsets.symmetric(
-              horizontal: 18.0,
-              vertical: 16.0,
+              horizontal: 15.0,
+              vertical: 12.0,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Bigger Image: CircleAvatar with radius 50
+                // Smaller Image: CircleAvatar with radius 30
                 CircleAvatar(
                   backgroundColor: const Color(0xFFEFFBFA),
                   backgroundImage: AssetImage(image),
-                  radius: 50,
+                  radius:
+                      30, // Reduced radius for a more standard list item height
                 ),
                 const SizedBox(width: 15),
 
@@ -245,7 +256,7 @@ class UserReturnAssetPage extends StatelessWidget {
                         name,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 16, // Adjusted font size
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -254,43 +265,39 @@ class UserReturnAssetPage extends StatelessWidget {
                         date,
                         style: const TextStyle(
                           color: Colors.white70,
-                          fontSize: 14,
+                          fontSize: 12, // Adjusted font size
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 15),
 
                 // Status Badge and Arrow
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ⭐ The status badge container now uses the determined statusBgColor
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusBgColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: statusTextColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusBgColor,
+                    borderRadius:
+                        BorderRadius.circular(8), // Reduced badge radius
+                  ),
+                  child: Text(
+                    status,
+                    style: const TextStyle(
+                      color: statusTextColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12, // Adjusted font size
                     ),
-                    const SizedBox(width: 10),
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white70,
-                      size: 18,
-                    ),
-                  ],
+                  ),
+                ),
+                const SizedBox(width: 8), // Smaller gap between badge and arrow
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Color.fromARGB(255, 255, 255, 255),
+                  size: 16, // Reduced arrow size
                 ),
               ],
             ),

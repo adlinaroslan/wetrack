@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-// NOTE: Replaced previous relative imports with placeholders for demonstrability
-// In a full project, replace the placeholder routes with your actual pages.
-
+import 'package:wetrack/screens/user/logout_page.dart';
 import 'package:wetrack/models/chat_model.dart';
 import 'package:wetrack/services/chat_detail_page.dart';
+import 'package:wetrack/screens/user/user_profile_page.dart';
+import 'package:wetrack/screens/user/user_notification.dart';
 
 // Placeholder Pages (for Navigation consistency)
 class PlaceholderPage extends StatelessWidget {
@@ -106,19 +106,18 @@ class ChatListPage extends StatelessWidget {
                   ),
                   // Current Page (Message icon highlighted)
                   IconButton(
-                    icon: const Icon(
-                      Icons.message,
-                      color: Color(0xFFEFF9F9),
-                    ), // Lighter color when selected
-                    onPressed: () {}, // Already on this page
+                    icon: const Icon(Icons.message, color: Colors.white),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChatListPage()),
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.notifications, color: Colors.white),
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const PlaceholderPage('Notifications'),
-                      ),
+                          builder: (_) => const UserNotificationPage()),
                     ),
                   ),
                   IconButton(
@@ -126,8 +125,7 @@ class ChatListPage extends StatelessWidget {
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const PlaceholderPage('Profile'),
-                      ),
+                          builder: (_) => const UserProfilePage()),
                     ),
                   ),
                 ],
@@ -280,22 +278,16 @@ class ChatListPage extends StatelessWidget {
                 ),
               ],
               onTap: (index) {
-                // Placeholder navigation
                 if (index == 0) {
-                  Navigator.pop(context); // Go back to Home
+                  Navigator.pop(
+                      context); // Assumes 'Home' is the previous screen
                 } else if (index == 1) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PlaceholderPage('QR Scan'),
-                    ),
-                  );
+                  // Placeholder: Assuming '/scanqr' is a defined route
+                  Navigator.pushNamed(context, '/scanqr');
                 } else if (index == 2) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const PlaceholderPage('Logout'),
-                    ),
+                    MaterialPageRoute(builder: (_) => const LogoutPage()),
                   );
                 }
               },

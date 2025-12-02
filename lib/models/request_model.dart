@@ -10,6 +10,9 @@ class AssetRequest {
   final DateTime requiredDate;
   final String status; // 'PENDING', 'APPROVED', 'REJECTED'
 
+  // ✅ ADDED: Field to hold the due date (set upon approval)
+  final Timestamp? dueDateTime;
+
   AssetRequest({
     required this.id,
     required this.userId,
@@ -19,6 +22,8 @@ class AssetRequest {
     required this.requestedDate,
     required this.requiredDate,
     required this.status,
+    // ✅ ADDED: Include in the constructor
+    this.dueDateTime,
   });
 
   // Factory constructor to create a Request from a Firestore document
@@ -37,10 +42,12 @@ class AssetRequest {
       assetName: data['assetName'] as String? ?? 'Unknown Asset',
       requestedDate:
           (data['requestedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      requiredDate:
-          (data['requiredDate'] as Timestamp?)?.toDate() ??
+      requiredDate: (data['requiredDate'] as Timestamp?)?.toDate() ??
           DateTime.now().add(const Duration(days: 7)),
       status: data['status'] as String? ?? 'PENDING',
+
+      // ✅ ADDED: Safely read the new dueDateTime field (it will be null until approved)
+      dueDateTime: data['dueDateTime'] as Timestamp?,
     );
   }
 
@@ -51,9 +58,13 @@ class AssetRequest {
       'userName': userName,
       'assetId': assetId,
       'assetName': assetName,
-      'requestedDate': requestedDate,
-      'requiredDate': requiredDate,
+      // NOTE: We generally store DateTimes as Timestamp in Firestore:
+      'requestedDate': Timestamp.fromDate(requestedDate),
+      'requiredDate': Timestamp.fromDate(requiredDate),
       'status': status,
+
+      // ✅ ADDED: Write the dueDateTime field (will be null initially)
+      'dueDateTime': dueDateTime,
     };
   }
 }

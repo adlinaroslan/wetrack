@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../services/firestore_service.dart';
-import 'user_return_asset.dart'; // Ensure this path is correct
+import 'package:wetrack/services/firestore_service.dart';
+import 'user_return_asset.dart';
+import 'user_notification.dart';
 
 class UserReturnAssetDetailsPage extends StatefulWidget {
   final String assetName;
@@ -35,7 +36,7 @@ class _UserReturnAssetDetailsPageState
   final List<String> conditions = ["Good", "Minor Damage", "Major Damage"];
 
   // Define the colors for the gradient and contrasting bars
-  static const Color primaryTeal = Color(0xFF0FB7B2); // Light part of gradient
+  static const Color primaryTeal = Color(0xFF00A7A7); // Light part of gradient
   static const Color darkTeal = Color(0xFF008080); // Dark part of gradient
   // New color for Header and Footer
   static const Color headerFooterTeal = Color(0xFF004C5C);
@@ -51,7 +52,7 @@ class _UserReturnAssetDetailsPageState
     return Scaffold(
       // 🌟 HEADER (AppBar) with darker color 🌟
       appBar: AppBar(
-        backgroundColor: headerFooterTeal, // Use the new dark color
+        backgroundColor: darkTeal, // Use the new dark color
         elevation: 8, // Add a slight shadow for depth
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
@@ -66,7 +67,11 @@ class _UserReturnAssetDetailsPageState
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {
-              // TODO: Navigate to User Notification Page
+              // Navigate to notifications page
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UserNotificationPage()),
+              );
             },
           ),
         ],
@@ -78,7 +83,7 @@ class _UserReturnAssetDetailsPageState
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [primaryTeal, darkTeal],
+            colors: [primaryTeal, headerFooterTeal],
           ),
         ),
         child: SingleChildScrollView(
@@ -406,12 +411,7 @@ class _UserReturnAssetDetailsPageState
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: selectedCondition != null && !_isProcessing
-              ? const Color.fromARGB(
-                  255,
-                  255,
-                  140,
-                  0,
-                ) // Prominent Orange Accent
+              ? primaryTeal
               : Colors.grey,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

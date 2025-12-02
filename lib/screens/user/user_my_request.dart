@@ -1,43 +1,36 @@
 import 'package:flutter/material.dart';
-import 'user_notification.dart';
-import 'user_profile_page.dart';
-import 'package:wetrack/services/chat_list_page.dart';
-import 'package:wetrack/screens/user/logout_page.dart';
-import '../../services/firestore_service.dart';
-import '../../models/request_model.dart';
-import 'user_request_edit.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:wetrack/services/firestore_service.dart';
+import '../../models/request_model.dart'; // Assuming this is the path to your model
 
-class UserMyRequestsPage extends StatefulWidget {
-  final String? userId;
+class UserMyRequestPage extends StatelessWidget {
+  const UserMyRequestPage({super.key});
 
-  const UserMyRequestsPage({super.key, this.userId});
+  // Helper function to determine the status text and color
+  Map<String, dynamic> _getStatusVisuals(String status) {
+    switch (status) {
+      case 'APPROVED':
+        return {'text': 'Approved ✅', 'color': Colors.green};
+      case 'DECLINED':
+        return {'text': 'Declined ❌', 'color': Colors.red};
+      case 'PENDING':
+      default:
+        return {'text': 'Pending ⏳', 'color': Colors.orange};
+    }
+  }
 
-  @override
-  State<UserMyRequestsPage> createState() => _UserMyRequestsPageState();
-}
-
-class _UserMyRequestsPageState extends State<UserMyRequestsPage> {
   @override
   Widget build(BuildContext context) {
-    final fs = FirestoreService();
-    final uid = widget.userId;
-    // FIX: Changed bottomPadding calculation.
-    // The previous bottomPadding = MediaQuery.of(context).padding.bottom + 80
-    // combined with a bottomNavBar of height 70 caused the overflow.
-    // We only need padding for the BottomNavigationBar's height (70) plus a small buffer (e.g., 20).
-    final bottomPadding = MediaQuery.of(context).padding.bottom + 70 + 20;
-
-    final sampleRequests = [
-      {
-        "name": "HDMI – cable",
-        "date": "23 Jan 2025 - 25 Jan 2025",
-        "icon": "assets/images/hdmi.png",
-      },
-    ];
+    // Get current user ID
+    final user = FirebaseAuth.instance.currentUser;
+    final String? currentUserId = user?.uid;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFEFF9F9),
+
+      // --- APP BAR ---
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
+        preferredSize: const Size.fromHeight(100),
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -48,259 +41,138 @@ class _UserMyRequestsPageState extends State<UserMyRequestsPage> {
           ),
           child: SafeArea(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'My Requests',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                  const Expanded(
+                    child: Text(
+                      'My Asset Requests',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.message, color: Colors.white),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ChatListPage()),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications, color: Colors.white),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => UserNotificationPage()),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.person, color: Colors.white),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => UserProfilePage()),
-                    ),
-                  ),
+                  const SizedBox(width: 48), // Spacer to align title
                 ],
               ),
             ),
           ),
         ),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 251, 252, 252),
-              Color.fromARGB(255, 255, 255, 255),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: uid == null
-            ? ListView.builder(
-                padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding),
-                itemCount: sampleRequests.length,
-                itemBuilder: (context, index) {
-                  final req = sampleRequests[index];
-                  return _buildRequestTile(
-                    context,
-                    req["name"]!,
-                    req["date"]!,
-                    req["icon"]!,
-                    isMounted: mounted,
+
+      // --- BODY: REAL-TIME STREAM ---
+      body: currentUserId == null
+          ? const Center(child: Text("User not logged in."))
+          : StreamBuilder<List<AssetRequest>>(
+              stream: FirestoreService().getRequestsForUser(currentUserId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                      child:
+                          Text("Error fetching requests: ${snapshot.error}"));
+                }
+
+                final requests = snapshot.data ?? [];
+
+                if (requests.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inventory_2_outlined,
+                            size: 60, color: Colors.grey),
+                        SizedBox(height: 10),
+                        Text("You have no pending asset requests.",
+                            style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
                   );
-                },
-              )
-            : StreamBuilder<List<AssetRequest>>(
-                stream: fs.getRequestsForUser(uid),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  }
+                }
 
-                  final data = snapshot.data ?? [];
+                // 5. Display List of Requests
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) {
+                    final request = requests[index];
+                    final visuals = _getStatusVisuals(request.status);
 
-                  if (data.isEmpty) {
-                    return const Center(child: Text('No requests found'));
-                  }
+                    return Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 16),
+                        leading: CircleAvatar(
+                          backgroundColor: visuals['color'].withOpacity(0.1),
+                          child: Icon(
+                            request.status == 'APPROVED'
+                                ? Icons.check_circle_outline
+                                : request.status == 'DECLINED'
+                                    ? Icons.cancel_outlined
+                                    : Icons.access_time,
+                            color: visuals['color'],
+                          ),
+                        ),
+                        title: Text(
+                          request.assetName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF004C5C),
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            // FIX HERE: Safe access to dueDateTime using ?. and ?? 'N/A'
+                            if (request.status == 'APPROVED' &&
+                                request.dueDateTime != null)
+                              Text(
+                                  'Due Date: ${request.dueDateTime?.toDate().toLocal().toString().split(' ')[0] ?? 'N/A'}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
 
-                  return ListView.builder(
-                    padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding),
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final r = data[index];
-                      return _buildRequestTile(
-                        context,
-                        r.assetName,
-                        r.requiredDate.toIso8601String().split('T').first,
-                        null,
-                        requestObj: r,
-                        isMounted: mounted,
-                      );
-                    },
-                  );
-                },
-              ),
-      ),
-      bottomNavigationBar: Container(
-        height: 70,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(50),
-            topRight: Radius.circular(50),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, -3),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(50),
-            topRight: Radius.circular(50),
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-            elevation: 0,
-            currentIndex: 0,
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white70,
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.logout), label: 'Logout'),
-            ],
-            onTap: (index) {
-              if (index == 0) Navigator.pop(context);
-              if (index == 1) Navigator.pushNamed(context, '/scanqr');
-              if (index == 2) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LogoutPage()),
+                            Text(
+                                'Required by: ${request.requiredDate.toLocal().toString().split(' ')[0]}'),
+                            Text(
+                                'Requested on: ${request.requestedDate.toLocal().toString().split(' ')[0]}'),
+                          ],
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: visuals['color'].withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            visuals['text'],
+                            style: TextStyle(
+                              color: visuals['color'],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
-              }
-            },
-          ),
-        ),
-      ),
+              },
+            ),
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// TILE BUILDER (WITH FIXED ASYNC CONTEXT HANDLING)
-// ---------------------------------------------------------------------------
-
-Widget _buildRequestTile(
-  BuildContext context,
-  String name,
-  String date,
-  String? icon, {
-  AssetRequest? requestObj,
-  required bool isMounted,
-}) {
-  return GestureDetector(
-    onTap: () async {
-      if (requestObj != null) {
-        final messenger = ScaffoldMessenger.of(context);
-        final updated = await Navigator.push<bool?>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EditRequestPage(request: requestObj),
-          ),
-        );
-
-        // IMPORTANT: Prevent using context after async gap
-        if (!isMounted) return;
-
-        if (updated == true) {
-          messenger
-              .showSnackBar(const SnackBar(content: Text('Request updated')));
-        }
-      }
-    },
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromARGB(0, 247, 72, 72).withValues(alpha: 0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: const Color(0xFFEFF9F9),
-            backgroundImage: icon != null ? AssetImage(icon) : null,
-            child: icon == null
-                ? const Icon(Icons.insert_drive_file,
-                    size: 32, color: Color(0xFF00A7A7))
-                : null,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color.fromARGB(255, 251, 249, 249),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  date,
-                  style: const TextStyle(
-                    color: Color.fromARGB(255, 253, 253, 253),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(
-            Icons.arrow_forward_ios,
-            color: Colors.white,
-            size: 18,
-          ),
-        ],
-      ),
-    ),
-  );
 }

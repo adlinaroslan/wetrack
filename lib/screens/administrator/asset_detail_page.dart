@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/asset_model.dart';
-import '../../services/firestore_service.dart';
+import 'package:wetrack/services/firestore_service.dart';
 
 class AssetDetailPage extends StatelessWidget {
   final Asset asset;

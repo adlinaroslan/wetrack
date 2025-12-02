@@ -213,7 +213,7 @@ class _HomePageState extends State<HomePage> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildRoundIcon(
-            context, Icons.access_time, "Activity", const UserMyRequestsPage()),
+            context, Icons.access_time, "Activity", const UserMyRequestPage()),
         _buildRoundIcon(
             context, Icons.devices_other, "Asset", const ListAssetPage()),
         _buildRoundIcon(context, Icons.assignment_return, "Return",
@@ -264,7 +264,7 @@ class _HomePageState extends State<HomePage> {
 
       children: [
         _buildCard(context, "My Requests", Icons.list_alt, "2 Current Requests",
-            const UserMyRequestsPage()),
+            const UserMyRequestPage()),
         _buildCard(context, "Assets In Use", Icons.devices_other, "2 Borrowed",
             const UserAssetInUsePage()),
         _buildCard(context, "Returned Assets", Icons.assignment_turned_in,
@@ -428,7 +428,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         currentIndex: 0,
-        selectedItemColor: const Color(0xFF00FF84),
+        selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
