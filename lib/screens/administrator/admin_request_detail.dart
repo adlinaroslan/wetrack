@@ -14,8 +14,6 @@ class AdminRequestDetailPage extends StatelessWidget {
 
   void _changeStatus(BuildContext context, String status) {
     if (onStatusChanged != null) onStatusChanged!(status);
-    // If you want to update the passed object directly:
-    // request_model uses immutable fields; update via callback
     if (onStatusChanged != null) onStatusChanged!(status);
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text("Status changed to $status")));
@@ -71,7 +69,7 @@ class AdminRequestDetailPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: request.status == "Approved"
+                        color: request.status == "APPROVED"
                             ? Colors.green[50]
                             : Colors.orange[50],
                         borderRadius: BorderRadius.circular(8),
@@ -79,7 +77,7 @@ class AdminRequestDetailPage extends StatelessWidget {
                       child: Text(
                         request.status,
                         style: TextStyle(
-                          color: request.status == "Approved"
+                          color: request.status == "APPROVED"
                               ? Colors.green
                               : Colors.orange,
                           fontWeight: FontWeight.bold,
@@ -118,7 +116,7 @@ class AdminRequestDetailPage extends StatelessWidget {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _changeStatus(context, "Declined"),
+                        onPressed: () => _changeStatus(context, "DECLINED"),
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.redAccent),
                         child: const Text("Decline"),
@@ -127,7 +125,7 @@ class AdminRequestDetailPage extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _changeStatus(context, "Approved"),
+                        onPressed: () => _changeStatus(context, "APPROVED"),
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green),
                         child: const Text("Accept"),

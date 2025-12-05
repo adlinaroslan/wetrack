@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/asset_model.dart';
 import '../models/request_model.dart';
 import '../models/user_model.dart';
+import '../models/notification_model.dart';
+import 'package:flutter/foundation.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -59,7 +61,8 @@ class FirestoreService {
 
   Stream<List<Asset>> getAvailableAssets() {
     return assetsRef
-        .where('status', isEqualTo: 'AVAILABLE')
+        // 🚀 CHANGE: Filter for 'In Stock', which is the admin's default
+        .where('status', isEqualTo: 'In Stock')
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
@@ -72,6 +75,19 @@ class FirestoreService {
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
+  // 🌟 NEW METHOD: Fetch single asset by ID (from QR scan)
+  /// Fetches a single Asset document from the 'assets' collection by its ID.
+  Future<Asset?> getAssetById(String assetId) async {
+    try {
+      final docSnapshot = await assetsRef.doc(assetId).get();
+
+      // Use docSnapshot.data() which already returns the converted Asset object
+      return docSnapshot.exists ? docSnapshot.data() : null;
+    } catch (e) {
+      debugPrint('Error fetching asset by ID $assetId: $e');
+      return null;
+    }
+  }
   // ---------------------- REQUEST STREAMS ----------------------
 
   Stream<List<AssetRequest>> getRequestsForUser(String userId) {
@@ -225,6 +241,7 @@ class FirestoreService {
   Future<void> confirmReturn({
     required String assetId,
     required String condition,
+    String? requestId,
     String? comments,
   }) async {
     final assetDocRef = assetsRef.doc(assetId);
@@ -236,18 +253,31 @@ class FirestoreService {
       final asset = snap.data();
       final borrowerId = asset?.borrowedByUserId ?? 'N/A';
 
+      // ✅ Update Asset Status back to AVAILABLE
       transaction.update(assetDocRef, {
         'status': 'AVAILABLE',
         'borrowedByUserId': FieldValue.delete(),
         'dueDateTime': FieldValue.delete(),
+        'location': 'Storage',
       });
 
+      // ✅ Update request status if requestId is provided
+      if (requestId != null && requestId.isNotEmpty) {
+        final requestDocRef = requestsRef.doc(requestId);
+        transaction.update(requestDocRef, {
+          'status': 'RETURNED',
+          'returnedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      // ✅ Add to history
       _db.collection('asset_history').add({
         'assetId': assetId,
         'action': 'RETURNED',
         'condition': condition,
         'comments': comments,
         'returnedByUserId': borrowerId,
+        'requestId': requestId,
         'timestamp': FieldValue.serverTimestamp(),
       });
     });
@@ -256,13 +286,15 @@ class FirestoreService {
   // ---------------------- NOTIFICATIONS ----------------------
 
   /// Stream notifications for a specific user
-  Stream<List<Map<String, dynamic>>> getUserNotifications(String userId) {
+  Stream<List<NotificationModel>> getUserNotifications(String userId) {
     return _db
         .collection('notifications')
         .where('userId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()).toList());
+        .map((snap) => snap.docs
+            .map((doc) => NotificationModel.fromFirestore(doc))
+            .toList());
   }
 
   /// Mark notification as read

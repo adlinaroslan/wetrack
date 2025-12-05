@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../../models/asset_model.dart';
 import 'package:wetrack/services/firestore_service.dart';
+import 'package:wetrack/screens/user/user_homepage.dart';
+import 'package:wetrack/screens/user/user_notification.dart';
+import 'package:wetrack/screens/user/user_profile_page.dart';
+import 'package:wetrack/services/chat_list_page.dart';
 
 class UserRequestAssetPage extends StatefulWidget {
-  final Asset asset;
+  final Asset asset; // Asset object already contains all details
 
   const UserRequestAssetPage({super.key, required this.asset});
 
@@ -16,9 +21,19 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  DateTime? _selectedDate;
+  DateTime _selectedDate = DateTime.now();
+  String? _selectedTime;
   final TextEditingController _reasonController = TextEditingController();
   bool _isLoading = false;
+
+  final List<String> _times = [
+    "8:00 AM",
+    "9:00 AM",
+    "10:00 AM",
+    "01:00 PM",
+    "2:00 PM",
+    "03:00 PM"
+  ];
 
   @override
   void dispose() {
@@ -27,21 +42,52 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final pickedDate = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
+      initialDate: _selectedDate.isBefore(DateTime.now())
+          ? DateTime.now().add(const Duration(days: 1))
+          : _selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF00A7A7),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
-    if (pickedDate != null) {
-      setState(() => _selectedDate = pickedDate);
+    if (picked != null && picked != _selectedDate) {
+      setState(() => _selectedDate = picked);
     }
   }
 
+  DateTime _combineDateTime() {
+    if (_selectedTime == null) {
+      return _selectedDate;
+    }
+
+    final timeFormat = DateFormat('hh:mm a');
+    final timeParsed = timeFormat.parse(_selectedTime!);
+
+    return DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      timeParsed.hour,
+      timeParsed.minute,
+    );
+  }
+
   Future<void> _submitRequest() async {
-    if (_selectedDate == null) {
+    if (_selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a required date')),
+        const SnackBar(content: Text('Please select a required time slot')),
       );
       return;
     }
@@ -54,13 +100,16 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
       return;
     }
 
+    final requiredDateTime = _combineDateTime();
+
     setState(() => _isLoading = true);
 
     try {
       await _firestoreService.requestAsset(
-        assetId: widget.asset.id,
+        assetId: widget.asset
+            .docId, // Use docId for Firestore updates if that's what your service expects
         assetName: widget.asset.name,
-        requiredDate: _selectedDate!,
+        requiredDate: requiredDateTime,
         userId: user.uid,
         userName: user.displayName ?? user.email ?? 'Unknown User',
       );
@@ -72,7 +121,11 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -85,28 +138,45 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
     }
   }
 
-  String _monthName(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    return months[month - 1];
+  // --- NEW WIDGET FOR DETAIL ROWS ---
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF004C5C), size: 18),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF004C5C),
+              fontSize: 14,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 14,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
   }
+  // -------------------------------------
 
   @override
   Widget build(BuildContext context) {
+    // Determine the icon based on the asset category or use a default
+    final assetIcon = _getCategoryIcon(widget.asset.category);
+
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: Colors.white,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(80),
         child: Container(
@@ -129,18 +199,38 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
-                    child: Text(
-                      'Request Asset',
-                      style: TextStyle(
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Request Asset',
+                    style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
                         fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+                        fontSize: 18),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.message, color: Colors.white),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChatListPage()),
                     ),
                   ),
-                  const SizedBox(width: 48),
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: Colors.white),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const UserNotificationPage()),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.person, color: Colors.white),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const UserProfilePage()),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -148,133 +238,153 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Asset Header Card
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00A7A7), Color(0xFF69D9D9)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+            // 🔹 Asset Icon and Name Section
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF9F9),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF00A7A7), width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.asset.name,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Icon(Icons.category, color: Colors.white70),
-                        const SizedBox(width: 8),
-                        Text(
-                          widget.asset.category,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, color: Colors.white70),
-                        const SizedBox(width: 8),
-                        Text(
-                          widget.asset.location,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                ],
+              ),
+              child: Icon(
+                assetIcon, // Use dynamic icon
+                color: const Color(0xFF004C5C),
+                size: 50,
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 16),
+            Text(
+              widget.asset.name,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
 
-            // Required Date Section
-            const Text(
-              'When do you need this asset?',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF004C5C),
+            // --- NEW DETAIL DISPLAY SECTION ---
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(
+                    0xFFF0F8FF), // Light blue background for emphasis
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF69D9D9), width: 1),
+              ),
+              child: Column(
+                children: [
+                  _buildDetailRow(Icons.vpn_key, 'Asset ID', widget.asset.id),
+                  _buildDetailRow(
+                      Icons.qr_code, 'Serial No.', widget.asset.serialNumber),
+                  _buildDetailRow(
+                      Icons.business_center, 'Brand', widget.asset.brand),
+                  _buildDetailRow(
+                      Icons.category, 'Category', widget.asset.category),
+                  _buildDetailRow(
+                      Icons.location_on, 'Location', widget.asset.location),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 30),
+            // -------------------------------------
+
+            // 🔹 Date Picker Section
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Select Date",
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: const Color(0xFF004C5C),
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // ... (Date Picker GestureDetector remains the same)
             GestureDetector(
               onTap: () => _selectDate(context),
               child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFF00A7A7),
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
                 ),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF00A7A7)),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today,
-                            color: Color(0xFF00A7A7)),
-                        const SizedBox(width: 12),
-                        Text(
-                          _selectedDate == null
-                              ? 'Select a date'
-                              : '${_selectedDate!.day} ${_monthName(_selectedDate!.month)} ${_selectedDate!.year}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF004C5C),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      DateFormat('EEE, dd MMM yyyy').format(_selectedDate),
+                      style:
+                          const TextStyle(fontSize: 16, color: Colors.black87),
                     ),
-                    const Icon(Icons.arrow_forward, color: Color(0xFF00A7A7)),
+                    const Icon(Icons.calendar_today, color: Color(0xFF00A7A7)),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 28),
 
-            // Reason Section
-            const Text(
-              'Reason for request (Optional)',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF004C5C),
+            const SizedBox(height: 25),
+
+            // 🔹 Time Slots Section
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Select Time Slot",
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: const Color(0xFF004C5C),
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              children: _times.map((time) {
+                final isSelected = _selectedTime == time;
+                return ChoiceChip(
+                  label: Text(time),
+                  selected: isSelected,
+                  onSelected: (_) => setState(() => _selectedTime = time),
+                  selectedColor: const Color(0xFF00A7A7),
+                  backgroundColor: const Color(0xFFEFF9F9),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFF004C5C),
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 25),
+
+            // 🔹 Reason Section
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Reason for request (Optional)',
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: const Color(0xFF004C5C),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _reasonController,
-              maxLines: 4,
+              maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'Tell us why you need this asset...',
                 hintStyle: const TextStyle(color: Colors.grey),
@@ -282,7 +392,7 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
                 fillColor: const Color(0xFFEFF9F9),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF00A7A7)),
+                  borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -295,15 +405,17 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
             ),
             const SizedBox(height: 40),
 
-            // Submit Button
+            // 🔹 Submit Button
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _submitRequest,
+                onPressed: (_isLoading || _selectedTime == null)
+                    ? null
+                    : _submitRequest,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00A7A7),
-                  disabledBackgroundColor: Colors.grey,
+                  disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -316,22 +428,39 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
                         child: CircularProgressIndicator(
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 3,
                         ),
                       )
                     : const Text(
-                        'Submit Request',
+                        'SUBMIT REQUEST',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
               ),
             ),
-            const SizedBox(height: 20),
           ],
         ),
       ),
     );
+  }
+
+  // Helper to choose a relevant icon based on category (optional but good practice)
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'laptop':
+        return Icons.laptop_mac;
+      case 'monitor':
+        return Icons.desktop_windows;
+      case 'tool':
+        return Icons.construction;
+      case 'furniture':
+        return Icons.chair;
+      default:
+        return Icons.devices_other;
+    }
   }
 }

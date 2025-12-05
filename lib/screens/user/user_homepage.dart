@@ -254,24 +254,100 @@ class _HomePageState extends State<HomePage> {
   Widget _buildGridCards(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
-      // Allows the grid to scroll internally IF the phone is very small,
-      // but keeps the main page static.
       physics: const ClampingScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-
       childAspectRatio: 0.85,
-
       children: [
-        _buildCard(context, "My Requests", Icons.list_alt, "2 Current Requests",
-            const UserMyRequestPage()),
-        _buildCard(context, "Assets In Use", Icons.devices_other, "2 Borrowed",
-            const UserAssetInUsePage()),
-        _buildCard(context, "Returned Assets", Icons.assignment_turned_in,
-            "2 All-Time", const UserReturnAssetPage()),
-        _buildCard(context, "Pending Assets", Icons.pending_actions,
-            "3 Due Soon", const UserHistoryPage()),
+        _buildRequestCard(context),
+        _buildAssetsInUseCard(context),
+        _buildReturnedAssetsCard(context),
+        _buildPendingAssetsCard(context),
       ],
+    );
+  }
+
+  // 🔹 My Requests card
+  Widget _buildRequestCard(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('requests')
+          .where('status', isEqualTo: 'PENDING')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+        return _buildCard(
+          context,
+          "My Requests",
+          Icons.list_alt,
+          "$count Current Requests",
+          const UserMyRequestPage(),
+        );
+      },
+    );
+  }
+
+  // 🔹 Assets In Use card
+  Widget _buildAssetsInUseCard(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('assets')
+          .where('status', isEqualTo: 'BORROWED')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+        return _buildCard(
+          context,
+          "Assets In Use",
+          Icons.devices_other,
+          "$count Borrowed",
+          const UserAssetInUsePage(),
+        );
+      },
+    );
+  }
+
+  // 🔹 Returned Assets card
+  Widget _buildReturnedAssetsCard(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('assets')
+          .where('status', isEqualTo: 'RETURNED')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+        return _buildCard(
+          context,
+          "Returned Assets",
+          Icons.assignment_turned_in,
+          "$count All-Time",
+          const UserReturnAssetPage(),
+        );
+      },
+    );
+  }
+
+  // 🔹 Pending Assets card
+  Widget _buildPendingAssetsCard(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('assets')
+          .where('status', isEqualTo: 'PENDING')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _buildCard(context, "Pending Assets", Icons.pending_actions,
+              "Loading...", const UserHistoryPage());
+        }
+        final count = snapshot.data!.docs.length;
+        return _buildCard(
+          context,
+          "Pending Assets",
+          Icons.pending_actions,
+          "$count Due Soon",
+          const UserHistoryPage(),
+        );
+      },
     );
   }
 

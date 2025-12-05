@@ -8,9 +8,10 @@ class AssetRequest {
   final String assetName;
   final DateTime requestedDate;
   final DateTime requiredDate;
-  final String status; // 'PENDING', 'APPROVED', 'REJECTED'
+  // Status MUST be written and read consistently (e.g., 'PENDING', 'APPROVED')
+  final String status;
 
-  // ✅ ADDED: Field to hold the due date (set upon approval)
+  // Field to hold the due date (set upon approval)
   final Timestamp? dueDateTime;
 
   AssetRequest({
@@ -22,7 +23,6 @@ class AssetRequest {
     required this.requestedDate,
     required this.requiredDate,
     required this.status,
-    // ✅ ADDED: Include in the constructor
     this.dueDateTime,
   });
 
@@ -44,9 +44,10 @@ class AssetRequest {
           (data['requestedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       requiredDate: (data['requiredDate'] as Timestamp?)?.toDate() ??
           DateTime.now().add(const Duration(days: 7)),
+      // Reads whatever case is stored, defaults to 'PENDING' if missing
       status: data['status'] as String? ?? 'PENDING',
 
-      // ✅ ADDED: Safely read the new dueDateTime field (it will be null until approved)
+      // Safely reads the new dueDateTime field (it will be null until approved)
       dueDateTime: data['dueDateTime'] as Timestamp?,
     );
   }
@@ -58,13 +59,10 @@ class AssetRequest {
       'userName': userName,
       'assetId': assetId,
       'assetName': assetName,
-      // NOTE: We generally store DateTimes as Timestamp in Firestore:
       'requestedDate': Timestamp.fromDate(requestedDate),
       'requiredDate': Timestamp.fromDate(requiredDate),
       'status': status,
-
-      // ✅ ADDED: Write the dueDateTime field (will be null initially)
-      'dueDateTime': dueDateTime,
+      'dueDateTime': dueDateTime, // Writes null if not set
     };
   }
 }

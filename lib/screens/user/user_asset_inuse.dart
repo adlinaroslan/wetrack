@@ -6,6 +6,7 @@ import 'package:wetrack/services/chat_list_page.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
 import 'user_return_asset_details.dart';
+import 'package:intl/intl.dart';
 
 class UserAssetInUsePage extends StatefulWidget {
   const UserAssetInUsePage({super.key});
@@ -147,7 +148,7 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
     required bool isOverdue,
   }) {
     final dueStr = asset.dueDateTime != null
-        ? '${asset.dueDateTime!.day} ${_monthName(asset.dueDateTime!.month)} ${asset.dueDateTime!.year}'
+        ? DateFormat('dd MMM yyyy').format(asset.dueDateTime!)
         : 'N/A';
 
     return Card(
@@ -187,14 +188,17 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
               ),
           ],
         ),
-        trailing: ElevatedButton.icon(
+        trailing: IconButton(
+          icon: const Icon(Icons.assignment_return, color: Color(0xFF00A7A7)),
+          tooltip: 'Return Asset',
           onPressed: () {
+            // 👉 Navigate to UserReturnAssetDetailsPage instead of calling confirmReturn directly
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => UserReturnAssetDetailsPage(
                   assetName: asset.name,
-                  assetId: asset.id,
+                  assetId: asset.docId,
                   category: asset.category,
                   location: asset.location,
                   status: asset.status,
@@ -203,17 +207,6 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
               ),
             );
           },
-          icon: Image.asset(
-            'assets/return_icon.png', // Make sure this path is correct
-            width: 16,
-            height: 16,
-          ),
-          label: const Text('Return'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00A7A7),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          ),
         ),
       ),
     );

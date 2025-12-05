@@ -85,11 +85,27 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Future<String?> _uploadProfileImage(File file) async {
     if (_user == null) return null;
-    final ref = _storage.ref().child('profile_pics').child('${_user!.uid}.jpg');
-    final uploadTask = ref.putFile(file);
-    final snapshot = await uploadTask.whenComplete(() {});
-    final url = await snapshot.ref.getDownloadURL();
-    return url;
+
+    try {
+      // 1. Create the reference
+      final ref =
+          _storage.ref().child('profile_pics').child('${_user!.uid}.jpg');
+
+      // 2. Perform the upload and WAIT for it to finish
+      // explicitly awaiting the putFile task helps catch write errors
+      await ref.putFile(file);
+
+      // 3. Get the URL only after the file is definitely there
+      final url = await ref.getDownloadURL();
+      return url;
+    } on FirebaseException catch (e) {
+      debugPrint('Firebase Storage Error: ${e.code} - ${e.message}');
+      // Optional: Show a snackbar here if you want specific feedback
+      return null;
+    } catch (e) {
+      debugPrint('General Upload Error: $e');
+      return null;
+    }
   }
 
   Future<void> _saveProfile() async {

@@ -1,4 +1,5 @@
-// Minimal data model for a single message
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Message {
   final String senderId;
   final String text;
@@ -9,9 +10,27 @@ class Message {
     required this.text,
     required this.timestamp,
   });
+
+  // Convert Firestore doc → Message
+  factory Message.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Message(
+      senderId: data['senderId'] ?? '',
+      text: data['text'] ?? '',
+      timestamp: (data['timestamp'] as Timestamp).toDate(),
+    );
+  }
+
+  // Convert Message → Map (for saving to Firestore)
+  Map<String, dynamic> toMap() {
+    return {
+      'senderId': senderId,
+      'text': text,
+      'timestamp': timestamp,
+    };
+  }
 }
 
-// Minimal data model for a chat conversation
 class Chat {
   final String chatId;
   final String participantName;
@@ -22,4 +41,21 @@ class Chat {
     required this.participantName,
     required this.messages,
   });
+
+  // Convert Firestore doc → Chat
+  factory Chat.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Chat(
+      chatId: doc.id,
+      participantName: data['participantName'] ?? '',
+      messages: [], // messages are usually loaded separately
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'participantName': participantName,
+      // messages are stored in a subcollection, not inline
+    };
+  }
 }

@@ -4,7 +4,6 @@ import 'package:wetrack/services/firebase_options.dart';
 import 'package:wetrack/screens/splash_screen.dart';
 import 'package:wetrack/screens/user/user_homepage.dart';
 import 'package:wetrack/screens/user/user_list_asset.dart';
-import 'package:wetrack/screens/user/user_asset_request.dart';
 import 'package:wetrack/screens/user/user_notification.dart';
 import 'package:wetrack/screens/user/logout_page.dart';
 import 'package:wetrack/screens/user/user_scan_qr_page.dart';
@@ -48,10 +47,6 @@ class WeTrackApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/homepage': (context) => const HomePage(),
         '/listasset': (context) => const ListAssetPage(),
-        '/assetrequest': (context) => const RequestAssetPage(
-              assetName: "Default Asset",
-              assetId: "A-000",
-            ),
         '/notification': (context) => const UserNotificationPage(),
         '/logout': (context) => const LogoutPage(),
         '/scanqr': (context) => const ScanQRPage(),

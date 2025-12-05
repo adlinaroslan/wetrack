@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../models/asset_model.dart';
-import 'package:wetrack/services/firestore_service.dart';
-import 'package:wetrack/services/chat_list_page.dart';
+import '../../models/asset_model.dart'; // Ensure correct path
+import 'package:wetrack/services/firestore_service.dart'; // Ensure correct path
+import 'package:wetrack/services/chat_list_page.dart'; // Ensure correct path
 import 'user_notification.dart';
 import 'user_profile_page.dart';
 import 'user_request_asset.dart';
@@ -19,37 +19,42 @@ class _ListAssetPageState extends State<ListAssetPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String _selectedCategory = 'All';
-  List<String> get _categories => ['All', 'Electronics', 'Laptop', 'Cable'];
+  // 🆕 Updated list to match categories used in the Admin's AddAssetPage
+  // This ensures the user can filter the new assets correctly.
+  List<String> get _categories => [
+        'All',
+        'Monitor',
+        'Desktop',
+        'Machine',
+        'Tools',
+        'IT-Accessories',
+      ];
 
+  // 🆕 Filter assets based on search query AND the asset's stored category
   List<Asset> _filterAssets(List<Asset> assets) {
     final query = _searchController.text.trim().toLowerCase();
-    final selectedCategoryLower = _selectedCategory.toLowerCase();
-
-    final Map<String, List<String>> categoryKeywords = {
-      'electronics': ['projector', 'hdmi', 'usb', 'extension'],
-      'laptop': ['laptop', 'charger'],
-      'cable': ['cable', 'hdmi', 'usb', 'extension'],
-    };
+    final selectedCategory = _selectedCategory.toLowerCase();
 
     return assets.where((asset) {
       final assetName = asset.name.toLowerCase();
       final assetId = asset.id.toLowerCase();
+      final assetCategory =
+          asset.category.toLowerCase(); // Use the actual category field
 
-      // Category filter
-      if (selectedCategoryLower != 'all') {
-        final keywords =
-            categoryKeywords[selectedCategoryLower] ?? [selectedCategoryLower];
-        final categoryMatched = keywords.any((k) => assetName.contains(k));
-        if (!categoryMatched) return false;
+      // 1. Category filter
+      if (selectedCategory != 'all') {
+        // Only show asset if its category matches the selected filter
+        if (assetCategory != selectedCategory) return false;
       }
 
-      // Search filter
+      // 2. Search filter
       if (query.isNotEmpty) {
         final searchMatched =
             assetName.contains(query) || assetId.contains(query);
         if (!searchMatched) return false;
       }
 
+      // If no filters are applied or all filters pass
       return true;
     }).toList();
   }
@@ -159,7 +164,7 @@ class _ListAssetPageState extends State<ListAssetPage> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: const BorderRadius.all(Radius.circular(12)),
                       borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.0),
+                        color: Colors.transparent,
                       ),
                     ),
                   ),
@@ -199,6 +204,7 @@ class _ListAssetPageState extends State<ListAssetPage> {
             ),
           ),
           Expanded(
+            // StreamBuilder listens for real-time changes, including new assets
             child: StreamBuilder<List<Asset>>(
               stream: _firestoreService.getAvailableAssets(),
               builder: (context, snapshot) {
@@ -211,6 +217,7 @@ class _ListAssetPageState extends State<ListAssetPage> {
                 }
 
                 final assets = snapshot.data ?? [];
+                // The new asset will be in this list, and then filtered here.
                 final filteredAssets = _filterAssets(assets);
 
                 if (filteredAssets.isEmpty) {
@@ -287,6 +294,8 @@ class _ListAssetPageState extends State<ListAssetPage> {
     );
   }
 
+  // ℹ️ Note: This function still uses asset name to guess the image,
+  // you might want to use asset.imageUrl instead if the admin uploads a custom image.
   Widget _assetImage(String assetName) {
     final name = assetName.toLowerCase();
     String assetPath = 'assets/images/default.png';

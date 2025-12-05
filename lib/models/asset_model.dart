@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // 1. 💡 NEW: Import for date formatting
 
 class Asset {
   final String docId;
@@ -10,7 +11,7 @@ class Asset {
   final String imageUrl;
   final String location;
   final String status;
-  final String? registerDate;
+  final String? registerDate; // This must be a String?
   final String? borrowedByUserId;
   final DateTime? dueDateTime;
 
@@ -37,6 +38,19 @@ class Asset {
       throw Exception("Document data was null for Asset docId: ${doc.id}");
     }
 
+    // 2. 🚀 NEW HELPER FUNCTION: Safely handle registerDate field
+    String? _getRegisterDate(dynamic dateValue) {
+      if (dateValue == null) return null;
+
+      if (dateValue is String) {
+        return dateValue; // If it's a String, use it directly
+      } else if (dateValue is Timestamp) {
+        // If it's a Timestamp, convert it to a formatted String
+        return DateFormat("dd MMM yyyy").format(dateValue.toDate());
+      }
+      return null;
+    }
+
     return Asset(
       docId: doc.id,
       id: data['id'] ?? doc.id,
@@ -47,7 +61,10 @@ class Asset {
       imageUrl: data['imageUrl'] ?? 'assets/default.png',
       location: data['location'] ?? 'Available',
       status: data['status'] ?? 'Active',
-      registerDate: data['registerDate'],
+
+      // 3. ✅ CORRECTED: Use the helper function to ensure it's a String
+      registerDate: _getRegisterDate(data['registerDate']),
+
       borrowedByUserId: data['borrowedByUserId'],
       dueDateTime: data['dueDateTime'] != null
           ? (data['dueDateTime'] as Timestamp).toDate()
@@ -92,5 +109,5 @@ class Asset {
   }
 
   /// QR-friendly string for QR Viewer
-  String get qrData => id; // Or JSON encode for full asset: jsonEncode(toJson());
+  String get qrData => id;
 }

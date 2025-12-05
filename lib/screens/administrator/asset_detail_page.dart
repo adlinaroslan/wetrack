@@ -97,7 +97,7 @@ class AssetDetailPage extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Image.asset(asset.imagePath, height: 60),
+              Image.asset(asset.imageUrl, height: 60),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

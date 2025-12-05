@@ -1,34 +1,54 @@
+// lib/pages/user/user_my_request_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:wetrack/services/firestore_service.dart';
-import '../../models/request_model.dart'; // Assuming this is the path to your model
+import '../../models/request_model.dart';
 
 class UserMyRequestPage extends StatelessWidget {
   const UserMyRequestPage({super.key});
 
-  // Helper function to determine the status text and color
+  // Helper function returning proper label + color
   Map<String, dynamic> _getStatusVisuals(String status) {
-    switch (status) {
+    final normalized = status.toUpperCase();
+
+    switch (normalized) {
       case 'APPROVED':
-        return {'text': 'Approved ✅', 'color': Colors.green};
+        return {
+          'text': 'Approved ✅',
+          'color': Colors.green,
+          'normalized': normalized
+        };
       case 'DECLINED':
-        return {'text': 'Declined ❌', 'color': Colors.red};
+        return {
+          'text': 'Declined ❌',
+          'color': Colors.red,
+          'normalized': normalized
+        };
+      case 'COMPLETED':
+        return {
+          'text': 'Completed',
+          'color': Colors.blueGrey,
+          'normalized': normalized
+        };
       case 'PENDING':
       default:
-        return {'text': 'Pending ⏳', 'color': Colors.orange};
+        return {
+          'text': 'Pending ⏳',
+          'color': Colors.orange,
+          'normalized': normalized
+        };
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get current user ID
-    final user = FirebaseAuth.instance.currentUser;
-    final String? currentUserId = user?.uid;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFF9F9),
 
-      // --- APP BAR ---
+      // ------------------- APP BAR -------------------
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
         child: Container(
@@ -52,13 +72,14 @@ class UserMyRequestPage extends StatelessWidget {
                     child: Text(
                       'My Asset Requests',
                       style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(width: 48), // Spacer to align title
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
@@ -66,7 +87,7 @@ class UserMyRequestPage extends StatelessWidget {
         ),
       ),
 
-      // --- BODY: REAL-TIME STREAM ---
+      // ------------------- BODY -------------------
       body: currentUserId == null
           ? const Center(child: Text("User not logged in."))
           : StreamBuilder<List<AssetRequest>>(
@@ -78,8 +99,8 @@ class UserMyRequestPage extends StatelessWidget {
 
                 if (snapshot.hasError) {
                   return Center(
-                      child:
-                          Text("Error fetching requests: ${snapshot.error}"));
+                    child: Text("Error fetching requests: ${snapshot.error}"),
+                  );
                 }
 
                 final requests = snapshot.data ?? [];
@@ -92,20 +113,33 @@ class UserMyRequestPage extends StatelessWidget {
                         Icon(Icons.inventory_2_outlined,
                             size: 60, color: Colors.grey),
                         SizedBox(height: 10),
-                        Text("You have no pending asset requests.",
-                            style: TextStyle(color: Colors.grey)),
+                        Text(
+                          "You have no pending asset requests.",
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   );
                 }
 
-                // 5. Display List of Requests
                 return ListView.builder(
                   padding: const EdgeInsets.all(16.0),
                   itemCount: requests.length,
                   itemBuilder: (context, index) {
                     final request = requests[index];
                     final visuals = _getStatusVisuals(request.status);
+                    final normalizedStatus = visuals['normalized'];
+
+                    // Pick icon based on status
+                    IconData icon;
+                    if (normalizedStatus == 'APPROVED' ||
+                        normalizedStatus == 'COMPLETED') {
+                      icon = Icons.check_circle_outline;
+                    } else if (normalizedStatus == 'DECLINED') {
+                      icon = Icons.cancel_outlined;
+                    } else {
+                      icon = Icons.access_time;
+                    }
 
                     return Card(
                       elevation: 2,
@@ -114,15 +148,13 @@ class UserMyRequestPage extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 16),
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
                         leading: CircleAvatar(
                           backgroundColor: visuals['color'].withOpacity(0.1),
                           child: Icon(
-                            request.status == 'APPROVED'
-                                ? Icons.check_circle_outline
-                                : request.status == 'DECLINED'
-                                    ? Icons.cancel_outlined
-                                    : Icons.access_time,
+                            icon,
                             color: visuals['color'],
                           ),
                         ),
@@ -137,13 +169,16 @@ class UserMyRequestPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 4),
-                            // FIX HERE: Safe access to dueDateTime using ?. and ?? 'N/A'
-                            if (request.status == 'APPROVED' &&
+
+                            // Show due date ONLY if approved
+                            if (normalizedStatus == 'APPROVED' &&
                                 request.dueDateTime != null)
                               Text(
-                                  'Due Date: ${request.dueDateTime?.toDate().toLocal().toString().split(' ')[0] ?? 'N/A'}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
+                                'Due Date: ${request.dueDateTime!.toDate().toLocal().toString().split(' ')[0]}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
 
                             Text(
                                 'Required by: ${request.requiredDate.toLocal().toString().split(' ')[0]}'),
