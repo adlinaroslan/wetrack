@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // 1. 💡 NEW: Import for date formatting
+import 'package:intl/intl.dart';
 
 class Asset {
   final String docId;
@@ -11,7 +11,7 @@ class Asset {
   final String imageUrl;
   final String location;
   final String status;
-  final String? registerDate; // This must be a String?
+  final String? registerDate;
   final String? borrowedByUserId;
   final DateTime? dueDateTime;
 
@@ -30,7 +30,7 @@ class Asset {
     this.dueDateTime,
   });
 
-  /// Convert Firestore document → Asset object
+  /// Firestore → Asset
   factory Asset.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
 
@@ -38,16 +38,10 @@ class Asset {
       throw Exception("Document data was null for Asset docId: ${doc.id}");
     }
 
-    // 2. 🚀 NEW HELPER FUNCTION: Safely handle registerDate field
     String? _getRegisterDate(dynamic dateValue) {
       if (dateValue == null) return null;
-
-      if (dateValue is String) {
-        return dateValue; // If it's a String, use it directly
-      } else if (dateValue is Timestamp) {
-        // If it's a Timestamp, convert it to a formatted String
-        return DateFormat("dd MMM yyyy").format(dateValue.toDate());
-      }
+      if (dateValue is String) return dateValue;
+      if (dateValue is Timestamp) return DateFormat("dd MMM yyyy").format(dateValue.toDate());
       return null;
     }
 
@@ -61,18 +55,13 @@ class Asset {
       imageUrl: data['imageUrl'] ?? 'assets/default.png',
       location: data['location'] ?? 'Available',
       status: data['status'] ?? 'Active',
-
-      // 3. ✅ CORRECTED: Use the helper function to ensure it's a String
       registerDate: _getRegisterDate(data['registerDate']),
-
       borrowedByUserId: data['borrowedByUserId'],
-      dueDateTime: data['dueDateTime'] != null
-          ? (data['dueDateTime'] as Timestamp).toDate()
-          : null,
+      dueDateTime: data['dueDateTime'] != null ? (data['dueDateTime'] as Timestamp).toDate() : null,
     );
   }
 
-  /// Convert Asset → Firestore Map
+  /// Asset → Firestore Map
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
@@ -85,12 +74,11 @@ class Asset {
       'status': status,
       'registerDate': registerDate,
       'borrowedByUserId': borrowedByUserId,
-      'dueDateTime':
-          dueDateTime != null ? Timestamp.fromDate(dueDateTime!) : null,
+      'dueDateTime': dueDateTime != null ? Timestamp.fromDate(dueDateTime!) : null,
     };
   }
 
-  /// Convert Asset → JSON (for QR Code)
+  /// Asset → JSON (for QR Code)
   Map<String, dynamic> toJson() {
     return {
       'docId': docId,
@@ -108,6 +96,37 @@ class Asset {
     };
   }
 
-  /// QR-friendly string for QR Viewer
+  /// QR-friendly string
   String get qrData => id;
+
+  /// Optional: copyWith for future use
+  Asset copyWith({
+    String? docId,
+    String? id,
+    String? serialNumber,
+    String? name,
+    String? brand,
+    String? category,
+    String? imageUrl,
+    String? location,
+    String? status,
+    String? registerDate,
+    String? borrowedByUserId,
+    DateTime? dueDateTime,
+  }) {
+    return Asset(
+      docId: docId ?? this.docId,
+      id: id ?? this.id,
+      serialNumber: serialNumber ?? this.serialNumber,
+      name: name ?? this.name,
+      brand: brand ?? this.brand,
+      category: category ?? this.category,
+      imageUrl: imageUrl ?? this.imageUrl,
+      location: location ?? this.location,
+      status: status ?? this.status,
+      registerDate: registerDate ?? this.registerDate,
+      borrowedByUserId: borrowedByUserId ?? this.borrowedByUserId,
+      dueDateTime: dueDateTime ?? this.dueDateTime,
+    );
+  }
 }
