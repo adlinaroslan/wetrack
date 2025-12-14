@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // 1. 💡 NEW: Import for date formatting
+import 'package:intl/intl.dart';
 
 class Asset {
   final String docId;
@@ -11,9 +11,11 @@ class Asset {
   final String imageUrl;
   final String location;
   final String status;
-  final String? registerDate; // This must be a String?
+  final String? registerDate;
   final String? borrowedByUserId;
   final DateTime? dueDateTime;
+  final DateTime? borrowDate; // <--- NEW: For history tracking
+  final DateTime? returnDate; // <--- NEW: For history tracking
 
   Asset({
     required this.docId,
@@ -28,6 +30,8 @@ class Asset {
     this.registerDate,
     this.borrowedByUserId,
     this.dueDateTime,
+    this.borrowDate,
+    this.returnDate,
   });
 
   /// Convert Firestore document → Asset object
@@ -38,14 +42,11 @@ class Asset {
       throw Exception("Document data was null for Asset docId: ${doc.id}");
     }
 
-    // 2. 🚀 NEW HELPER FUNCTION: Safely handle registerDate field
     String? _getRegisterDate(dynamic dateValue) {
       if (dateValue == null) return null;
-
       if (dateValue is String) {
-        return dateValue; // If it's a String, use it directly
+        return dateValue;
       } else if (dateValue is Timestamp) {
-        // If it's a Timestamp, convert it to a formatted String
         return DateFormat("dd MMM yyyy").format(dateValue.toDate());
       }
       return null;
@@ -61,13 +62,18 @@ class Asset {
       imageUrl: data['imageUrl'] ?? 'assets/default.png',
       location: data['location'] ?? 'Available',
       status: data['status'] ?? 'Active',
-
-      // 3. ✅ CORRECTED: Use the helper function to ensure it's a String
       registerDate: _getRegisterDate(data['registerDate']),
-
       borrowedByUserId: data['borrowedByUserId'],
       dueDateTime: data['dueDateTime'] != null
           ? (data['dueDateTime'] as Timestamp).toDate()
+          : null,
+
+      // MAPPING NEW FIELDS
+      borrowDate: data['borrowDate'] != null
+          ? (data['borrowDate'] as Timestamp).toDate()
+          : null,
+      returnDate: data['returnDate'] != null
+          ? (data['returnDate'] as Timestamp).toDate()
           : null,
     );
   }
@@ -87,6 +93,10 @@ class Asset {
       'borrowedByUserId': borrowedByUserId,
       'dueDateTime':
           dueDateTime != null ? Timestamp.fromDate(dueDateTime!) : null,
+      'borrowDate':
+          borrowDate != null ? Timestamp.fromDate(borrowDate!) : null, // NEW
+      'returnDate':
+          returnDate != null ? Timestamp.fromDate(returnDate!) : null, // NEW
     };
   }
 
@@ -105,9 +115,10 @@ class Asset {
       'registerDate': registerDate,
       'borrowedByUserId': borrowedByUserId,
       'dueDateTime': dueDateTime?.toIso8601String(),
+      'borrowDate': borrowDate?.toIso8601String(), // NEW
+      'returnDate': returnDate?.toIso8601String(), // NEW
     };
   }
 
-  /// QR-friendly string for QR Viewer
   String get qrData => id;
 }

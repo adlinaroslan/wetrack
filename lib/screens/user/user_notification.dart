@@ -65,10 +65,13 @@ class UserNotificationPage extends StatelessWidget {
       body: user == null
           ? const Center(child: Text("Please login"))
           : StreamBuilder<QuerySnapshot>(
+              // NOTE: Some notifications may be written with a server timestamp
+              // that is not yet resolved on the client; ordering by 'timestamp'
+              // can hide documents temporarily. Use a simple query by userId
+              // and order locally to ensure notifications appear.
               stream: FirebaseFirestore.instance
                   .collection('notifications')
                   .where('userId', isEqualTo: user.uid)
-                  .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

@@ -118,13 +118,15 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                           children: [
                             ElevatedButton(
                               onPressed: () async {
+                                DateTime futureDueDate =
+                                    DateTime.now().add(const Duration(days: 7));
                                 // call approve
                                 try {
                                   await _fs.approveRequest(
                                     requestId: r.id,
                                     assetId: r.assetId,
                                     borrowerUserId: r.userId,
-                                    dueDate: r.requiredDate,
+                                    dueDate: futureDueDate,
                                   );
                                   if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
