@@ -6,12 +6,14 @@ class ChatDetailPage extends StatefulWidget {
   final String chatId;
   final String currentUserId;
   final String receiverId;
+  final String? recipientName;
 
   const ChatDetailPage({
     super.key,
     required this.chatId,
     required this.currentUserId,
     required this.receiverId,
+    this.recipientName,
   });
 
   @override
@@ -20,29 +22,94 @@ class ChatDetailPage extends StatefulWidget {
 
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final TextEditingController _controller = TextEditingController();
+  late Future<String?> _recipientRoleFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _recipientRoleFuture = _fetchRecipientRole(widget.receiverId);
+  }
+
+  Future<String?> _fetchRecipientRole(String userId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      return doc.data()?['role'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
-    await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .add({
-      'senderId': widget.currentUserId,
-      'text': _controller.text.trim(),
-      'timestamp': DateTime.now(),
-    });
+    final messageText = _controller.text.trim();
 
-    _controller.clear();
+    try {
+      // Add message to subcollection
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .collection('messages')
+          .add({
+        'senderId': widget.currentUserId,
+        'text': messageText,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      // Update last message in chat document
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .update({
+        'lastMessage': messageText,
+        'lastMessageTime': FieldValue.serverTimestamp(),
+      });
+
+      _controller.clear();
+    } on FirebaseException catch (fe) {
+      if (!mounted) return;
+      String errorMsg = 'Failed to send message.';
+      if (fe.code == 'permission-denied') {
+        errorMsg = 'Insufficient permissions to send messages.';
+      } else if (fe.code == 'unauthenticated') {
+        errorMsg = 'You must be signed in to send messages.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat with ${widget.receiverId}'),
-        backgroundColor: const Color(0xFF00A7A7),
+        elevation: 0,
+        title: FutureBuilder<String?>(
+          future: _recipientRoleFuture,
+          builder: (context, snapshot) {
+            final role = snapshot.data ?? 'User';
+            final name = widget.recipientName ?? widget.receiverId;
+            return Text('Chat With $role $name');
+          },
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -60,9 +127,22 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final messages = snapshot.data!.docs
-                    .map((doc) => Message.fromFirestore(doc))
-                    .toList();
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error loading messages: ${snapshot.error}'),
+                  );
+                }
+
+                List<Message> messages = [];
+                try {
+                  messages = snapshot.data!.docs
+                      .map((doc) => Message.fromFirestore(doc))
+                      .toList();
+                } catch (e) {
+                  return Center(
+                    child: Text('Error parsing messages: $e'),
+                  );
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(12),
@@ -99,22 +179,33 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           ),
 
           // 🔹 Input field
-          Padding(
+          Container(
             padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: "Type a message...",
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Color(0xFF00A7A7)),
+                const SizedBox(width: 8),
+                FloatingActionButton(
+                  mini: true,
+                  backgroundColor: const Color(0xFF00A7A7),
                   onPressed: _sendMessage,
+                  child: const Icon(Icons.send, color: Colors.white),
                 ),
               ],
             ),
@@ -122,5 +213,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

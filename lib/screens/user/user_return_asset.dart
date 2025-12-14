@@ -1,38 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:wetrack/models/asset_model.dart';
-import 'package:wetrack/services/chat_list_page.dart';
-import 'package:wetrack/screens/user/logout_page.dart';
-import 'user_notification.dart';
-import 'user_profile_page.dart';
-import 'user_return_asset_details.dart';
+import 'user_return_asset_details.dart'; // Ensure this import is correct
 
-class UserReturnAssetPage extends StatelessWidget {
+class UserReturnAssetPage extends StatefulWidget {
   const UserReturnAssetPage({super.key});
 
-  // Define a constant for the main gradient
+  @override
+  State<UserReturnAssetPage> createState() => _UserReturnAssetPageState();
+}
+
+class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
+  final Set<String> _selectedAssetIds = {};
+  String _searchQuery = ''; // New state for search query
+
   static const LinearGradient mainGradient = LinearGradient(
     colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  bool _isOverdue(DateTime? dueDateTime) {
-    if (dueDateTime == null) return false;
-    return DateTime.now().isAfter(dueDateTime);
+  bool _isOverdue(DateTime? dueDate) {
+    if (dueDate == null) return false;
+    return dueDate.isBefore(DateTime.now());
   }
 
-  // Helper: derive user-facing status
-  String _getUserStatus(Asset asset, bool isOverdue) {
-    if (isOverdue) return "Overdue";
-    if (asset.borrowedByUserId != null) return "In-use";
-    return "Available";
+  // NOTE: This function is now only called when the checkbox itself is tapped.
+  void _toggleSelection(String assetId) {
+    setState(() {
+      if (_selectedAssetIds.contains(assetId)) {
+        _selectedAssetIds.remove(assetId);
+      } else {
+        _selectedAssetIds.add(assetId);
+      }
+    });
+  }
+
+  // New function to handle navigation to the details page
+  void _goToDetailsPage(Asset asset) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UserReturnAssetDetailsPage(
+          assetName: asset.name,
+          assetId: asset.docId,
+          category: asset.category,
+          location: asset.location,
+          // Assuming 'In Use' or 'Overdue' is the status you want to pass
+          status: _isOverdue(asset.dueDateTime) ? 'Overdue' : 'In Use',
+          imagePath: _getImagePath(asset.name),
+        ),
+      ),
+    );
+  }
+
+  void _processReturn() {
+    // This function should be implemented to handle the actual return logic
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text("Processing ${_selectedAssetIds.length} returns...")),
+    );
+    // After processing, clear selection
+    setState(() {
+      _selectedAssetIds.clear();
+    });
+  }
+
+  List<Asset> _filterAssets(List<Asset> assets) {
+    if (_searchQuery.isEmpty) {
+      return assets;
+    }
+    final query = _searchQuery.toLowerCase();
+    return assets.where((asset) {
+      return asset.name.toLowerCase().contains(query) ||
+          asset.docId.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  String _getImagePath(String assetName) {
+    final name = assetName.toLowerCase();
+    if (name.contains('hdmi')) return 'assets/images/hdmi.jpg';
+    if (name.contains('usb') || name.contains('pendrive'))
+      return 'assets/images/usb.png';
+    if (name.contains('projector')) return 'assets/images/projector.png';
+    if (name.contains('laptop')) return 'assets/images/dell.jpg';
+    if (name.contains('extension') || name.contains('charger'))
+      return 'assets/images/extension.png';
+    return 'assets/images/default.png';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: Colors.white,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(80),
         child: Container(
@@ -40,7 +101,7 @@ class UserReturnAssetPage extends StatelessWidget {
           child: SafeArea(
             child: Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 20.0),
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
               child: Row(
                 children: [
                   IconButton(
@@ -49,7 +110,7 @@ class UserReturnAssetPage extends StatelessWidget {
                   ),
                   const Expanded(
                     child: Text(
-                      "Return Asset",
+                      "Return Assets",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -58,218 +119,244 @@ class UserReturnAssetPage extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.message, color: Colors.white),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ChatListPage()),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications, color: Colors.white),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const UserNotificationPage()),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.person, color: Colors.white),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const UserProfilePage()),
-                    ),
-                  ),
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
           ),
         ),
       ),
-
-      // 🔹 Body: Load assets dynamically from Firestore
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('assets').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final assets = snapshot.data!.docs
-              .map((doc) => Asset.fromFirestore(doc))
-              .toList();
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: assets.length,
-            itemBuilder: (context, index) {
-              final asset = assets[index];
-              final isOverdue = _isOverdue(asset.dueDateTime);
-
-              return _assetCard(
-                context,
-                asset: asset,
-                isOverdue: isOverdue,
-              );
-            },
-          );
-        },
-      ),
-
-      // Bottom Navigation
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
+      body: Column(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: mainGradient,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(50),
-                topRight: Radius.circular(50),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 10,
-                  offset: Offset(0, -3),
+          _buildScanHeader(context),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search asset name or ID...',
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF00A7A7)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-              ],
-            ),
-            child: BottomNavigationBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              currentIndex: 0,
-              selectedItemColor: const Color.fromARGB(255, 255, 255, 255),
-              unselectedItemColor: Colors.white,
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.qr_code_scanner), label: "Scan"),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.logout), label: "Logout"),
-              ],
-              onTap: (index) {
-                if (index == 0) {
-                  Navigator.pop(context);
-                } else if (index == 1) {
-                  Navigator.pushNamed(context, '/scanqr');
-                } else if (index == 2) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LogoutPage()),
-                  );
-                }
+                filled: true,
+                fillColor: const Color(0xFFEFF9F9),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
               },
             ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance.collection('assets').snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final allAssets = snapshot.data!.docs
+                    .map((doc) => Asset.fromFirestore(doc))
+                    .toList();
+
+                final borrowedAssets = allAssets
+                    .where((asset) => asset.borrowedByUserId != null)
+                    .toList();
+
+                final assets = _filterAssets(borrowedAssets);
+
+                if (assets.isEmpty) {
+                  return Center(
+                      child: Text(_searchQuery.isEmpty
+                          ? "No assets to return"
+                          : "No assets matching '$_searchQuery'"));
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: assets.length,
+                  itemBuilder: (context, index) {
+                    final asset = assets[index];
+                    final isSelected = _selectedAssetIds.contains(asset.docId);
+
+                    return _selectableAssetCard(asset, isSelected);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _selectedAssetIds.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: _processReturn,
+              backgroundColor: const Color(0xFF004C5C),
+              icon: const Icon(Icons.assignment_return, color: Colors.white),
+              label: Text("Return (${_selectedAssetIds.length}) Items",
+                  style: const TextStyle(color: Colors.white)),
+            )
+          : null,
+    );
+  }
+
+  // --- WIDGET: Large Scan Button Header ---
+  Widget _buildScanHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF9F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF00A7A7).withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.qr_code_scanner, size: 40, color: Color(0xFF00A7A7)),
+          const SizedBox(height: 8),
+          const Text(
+            "Quick Return",
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF004C5C),
+                fontSize: 16),
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/scanqr'),
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFF00A7A7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text("SCAN QR CODE TO RETURN"),
           ),
         ],
       ),
     );
   }
 
-  // --- Refactored _assetCard Widget ---
-  Widget _assetCard(
-    BuildContext context, {
-    required Asset asset,
-    required bool isOverdue,
-  }) {
-    final userStatus = _getUserStatus(asset, isOverdue);
+  // --- WIDGET: Selectable Card (MODIFIED onTap) ---
+  Widget _selectableAssetCard(Asset asset, bool isSelected) {
+    final isOverdue = _isOverdue(asset.dueDateTime);
+    final dueStr = asset.dueDateTime != null
+        ? DateFormat('dd MMM yyyy').format(asset.dueDateTime!)
+        : 'N/A';
 
-    Color statusBgColor;
-    if (userStatus == "Overdue") {
-      statusBgColor = Colors.red.shade600;
-    } else if (userStatus == "In-use") {
-      statusBgColor = Colors.orange.shade600;
-    } else {
-      statusBgColor = const Color.fromARGB(255, 111, 255, 171);
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      decoration: BoxDecoration(
-        gradient: mainGradient,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
+    return GestureDetector(
+      // MODIFIED: Tapping the card now goes to the details page.
+      onTap: () => _goToDetailsPage(asset),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        decoration: BoxDecoration(
+          color: isOverdue ? Colors.red.shade50 : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => UserReturnAssetDetailsPage(
-                  assetName: asset.name,
-                  assetId: asset.docId, // ✅ Firestore docId
-                  category: asset.category,
-                  location: asset.location,
-                  status: userStatus, // ✅ pass user-facing status
-                  imagePath: asset.imageUrl,
+          border: isSelected
+              ? Border.all(color: const Color(0xFF00A7A7), width: 2)
+              : Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              // CHECKBOX - Must be handled separately or disabled if not needed for bulk return
+              Transform.scale(
+                scale: 1.2,
+                child: Checkbox(
+                  value: isSelected,
+                  activeColor: const Color(0xFF00A7A7),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4)),
+                  // Tapping the checkbox still calls _toggleSelection
+                  onChanged: (bool? value) {
+                    _toggleSelection(asset.docId);
+                  },
                 ),
               ),
-            );
-          },
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12.0),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFFEFFBFA),
-                  backgroundImage: AssetImage(asset.imageUrl),
-                  radius: 30,
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(asset.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          )),
-                      const SizedBox(height: 4),
-                      Text(asset.registerDate ?? '',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          )),
-                    ],
+              const SizedBox(width: 8),
+
+              // IMAGE
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  color: Colors.grey.shade100,
+                  width: 50,
+                  height: 50,
+                  child: Image.asset(
+                    _getImagePath(asset.name),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.devices_other),
                   ),
                 ),
-                const SizedBox(width: 15),
+              ),
+              const SizedBox(width: 15),
+
+              // TEXT (NAME & DUE DATE)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      asset.name,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF004C5C)
+                            : Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Due Date: $dueStr',
+                      style: TextStyle(
+                        color: isOverdue ? Colors.red.shade700 : Colors.grey,
+                        fontWeight:
+                            isOverdue ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // OVERDUE PILL
+              if (isOverdue)
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusBgColor,
+                    color: Colors.red.shade600,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    userStatus, // ✅ show user-facing status
-                    style: const TextStyle(
+                  child: const Text(
+                    "OVERDUE",
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios,
-                    color: Colors.white, size: 16),
-              ],
-            ),
+
+              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+            ],
           ),
         ),
       ),

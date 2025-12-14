@@ -14,10 +14,14 @@ class Message {
   // Convert Firestore doc → Message
   factory Message.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final timestampData = data['timestamp'];
+    final timestamp = timestampData is Timestamp
+        ? timestampData.toDate()
+        : (timestampData != null ? timestampData as DateTime : DateTime.now());
     return Message(
       senderId: data['senderId'] ?? '',
       text: data['text'] ?? '',
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      timestamp: timestamp,
     );
   }
 

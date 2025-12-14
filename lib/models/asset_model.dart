@@ -14,6 +14,8 @@ class Asset {
   final String? registerDate;
   final String? borrowedByUserId;
   final DateTime? dueDateTime;
+  final DateTime? borrowDate; // <--- NEW: For history tracking
+  final DateTime? returnDate; // <--- NEW: For history tracking
 
   Asset({
     required this.docId,
@@ -28,6 +30,8 @@ class Asset {
     this.registerDate,
     this.borrowedByUserId,
     this.dueDateTime,
+    this.borrowDate,
+    this.returnDate,
   });
 
   // ============================

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../../models/asset_model.dart';
 import '../../services/firestore_service.dart';
 import 'package:wetrack/services/chat_list_page.dart';
+import 'package:wetrack/screens/user/logout_page.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
 import 'user_return_asset_details.dart';
-import 'package:intl/intl.dart';
 
 class UserAssetInUsePage extends StatefulWidget {
   const UserAssetInUsePage({super.key});
@@ -19,9 +20,25 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // Define the constant gradient used in the Return Page
+  static const LinearGradient mainGradient = LinearGradient(
+    colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // lib/screens/user/user_asset_in_use_page.dart
+
   bool _isOverdue(DateTime? dueDate) {
     if (dueDate == null) return false;
-    return dueDate.isBefore(DateTime.now());
+
+    // 🟢 FIX: Convert both the stored dueDate and the current time to UTC
+    // for a reliable comparison.
+    final DateTime nowUtc = DateTime.now().toUtc();
+    final DateTime dueDateUtc = dueDate.toUtc();
+
+    // Check if the UTC Due Date is before the UTC Current Time.
+    return dueDateUtc.isBefore(nowUtc);
   }
 
   @override
@@ -36,23 +53,15 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF9F9),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(80),
         child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: mainGradient),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 8.0,
-              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
               child: Row(
                 children: [
                   IconButton(
@@ -139,6 +148,54 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
           );
         },
       ),
+      // 🔹 Added Bottom Navigation Bar here
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: mainGradient,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(50),
+                topRight: Radius.circular(50),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  offset: Offset(0, -3),
+                ),
+              ],
+            ),
+            child: BottomNavigationBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              currentIndex: 0, // Highlight Home
+              selectedItemColor: Colors.white,
+              unselectedItemColor: Colors.white,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.qr_code_scanner), label: "Scan"),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.logout), label: "Logout"),
+              ],
+              onTap: (index) {
+                if (index == 0) {
+                  Navigator.pop(context); // Go back to Home
+                } else if (index == 1) {
+                  Navigator.pushNamed(context, '/scanqr');
+                } else if (index == 2) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LogoutPage()),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -151,48 +208,29 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
         ? DateFormat('dd MMM yyyy').format(asset.dueDateTime!)
         : 'N/A';
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: _assetImage(asset.name),
-        title: Text(
-          asset.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+    String statusText = isOverdue ? "Overdue" : "In Use";
+    Color statusColor =
+        isOverdue ? Colors.red.shade600 : Colors.orange.shade600;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      decoration: BoxDecoration(
+        gradient: mainGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              'Due: $dueStr',
-              style: TextStyle(
-                color: isOverdue ? Colors.red : Colors.grey,
-                fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            if (isOverdue)
-              const Padding(
-                padding: EdgeInsets.only(top: 4.0),
-                child: Text(
-                  'OVERDUE',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.assignment_return, color: Color(0xFF00A7A7)),
-          tooltip: 'Return Asset',
-          onPressed: () {
-            // 👉 Navigate to UserReturnAssetDetailsPage instead of calling confirmReturn directly
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -207,32 +245,77 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
               ),
             );
           },
-        ),
-      ),
-    );
-  }
-
-  Widget _assetImage(String assetName) {
-    final path = _getImagePath(assetName);
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: const BoxDecoration(
-        color: Color(0xFFEFF9F9),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Image.asset(
-          path,
-          width: 40,
-          height: 40,
-          errorBuilder: (_, __, ___) {
-            return const Icon(
-              Icons.devices_other,
-              size: 24,
-              color: Color(0xFF00A7A7),
-            );
-          },
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12.0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: const Color(0xFFEFFBFA),
+                  radius: 30,
+                  child: ClipOval(
+                    child: Image.asset(
+                      _getImagePath(asset.name),
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.devices_other,
+                        color: Color(0xFF00A7A7),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        asset.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Due: $dueStr',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    statusText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -240,37 +323,13 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
 
   String _getImagePath(String assetName) {
     final name = assetName.toLowerCase();
-
-    if (name.contains('hdmi')) {
-      return 'assets/images/hdmi.png';
-    } else if (name.contains('usb') || name.contains('pendrive')) {
+    if (name.contains('hdmi')) return 'assets/images/hdmi.jpg';
+    if (name.contains('usb') || name.contains('pendrive'))
       return 'assets/images/usb.png';
-    } else if (name.contains('projector')) {
-      return 'assets/images/projector.png';
-    } else if (name.contains('laptop')) {
-      return 'assets/images/laptop.png';
-    } else if (name.contains('extension') || name.contains('charger')) {
+    if (name.contains('projector')) return 'assets/images/projector.png';
+    if (name.contains('laptop')) return 'assets/images/dell.jpg';
+    if (name.contains('extension') || name.contains('charger'))
       return 'assets/images/extension.png';
-    }
-
     return 'assets/images/default.png';
-  }
-
-  String _monthName(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return months[month - 1];
   }
 }

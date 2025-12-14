@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../models/asset_model.dart'; // Ensure correct path
-import 'package:wetrack/services/firestore_service.dart'; // Ensure correct path
-import 'package:wetrack/services/chat_list_page.dart'; // Ensure correct path
+import '../../models/asset_model.dart';
+import 'package:wetrack/services/firestore_service.dart';
+import 'package:wetrack/services/chat_list_page.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
 import 'user_request_asset.dart';
@@ -19,18 +19,39 @@ class _ListAssetPageState extends State<ListAssetPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String _selectedCategory = 'All';
-  // 🆕 Updated list to match categories used in the Admin's AddAssetPage
-  // This ensures the user can filter the new assets correctly.
-  List<String> get _categories => [
-        'All',
-        'Monitor',
-        'Desktop',
-        'Machine',
-        'Tools',
-        'IT-Accessories',
-      ];
 
-  // 🆕 Filter assets based on search query AND the asset's stored category
+  // ✅ Centralized categories & statuses (same as Admin)
+  final List<String> assetCategories = [
+    "Monitor",
+    "Desktop",
+    "Machine",
+    "Tools",
+    "IT-Accessories",
+  ];
+
+  final List<String> assetStatuses = [
+    "In Stock",
+    "In Use",
+    "Re-Purchased Needed",
+    "Sold Out",
+  ];
+
+  // ✅ Map categories to images
+  final Map<String, String> assetImageMap = {
+    "dell": "assets/images/dell.jpg",
+    "extension": "assets/images/extension.png",
+    "hdmi": "assets/images/hdmi.png", // you can also fallback to hdmi.jpg
+    "laptop": "assets/images/dell.jpg",
+    "laptop charger": "assets/images/laptop_charger.png",
+    "usb": "assets/images/usb.png",
+    "pendrive": "assets/images/usb.png",
+    "rca": "assets/images/rca.png",
+  };
+
+  final String defaultAssetImage = "assets/images/default.png";
+
+  List<String> get _categories => ["All", ...assetCategories];
+
   List<Asset> _filterAssets(List<Asset> assets) {
     final query = _searchController.text.trim().toLowerCase();
     final selectedCategory = _selectedCategory.toLowerCase();
@@ -38,23 +59,18 @@ class _ListAssetPageState extends State<ListAssetPage> {
     return assets.where((asset) {
       final assetName = asset.name.toLowerCase();
       final assetId = asset.id.toLowerCase();
-      final assetCategory =
-          asset.category.toLowerCase(); // Use the actual category field
+      final assetCategory = asset.category.toLowerCase();
 
-      // 1. Category filter
       if (selectedCategory != 'all') {
-        // Only show asset if its category matches the selected filter
         if (assetCategory != selectedCategory) return false;
       }
 
-      // 2. Search filter
       if (query.isNotEmpty) {
         final searchMatched =
             assetName.contains(query) || assetId.contains(query);
         if (!searchMatched) return false;
       }
 
-      // If no filters are applied or all filters pass
       return true;
     }).toList();
   }
@@ -80,10 +96,8 @@ class _ListAssetPageState extends State<ListAssetPage> {
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 8.0,
-              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
               child: Row(
                 children: [
                   IconButton(
@@ -143,10 +157,8 @@ class _ListAssetPageState extends State<ListAssetPage> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: Color(0xFF00A7A7),
-                    ),
+                    prefixIcon:
+                        const Icon(Icons.search, color: Color(0xFF00A7A7)),
                     hintText: 'Search Asset Name or ID',
                     hintStyle: const TextStyle(color: Colors.black45),
                     contentPadding: const EdgeInsets.symmetric(
@@ -163,16 +175,12 @@ class _ListAssetPageState extends State<ListAssetPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: const BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(
-                        color: Colors.transparent,
-                      ),
+                      borderSide: BorderSide(color: Colors.transparent),
                     ),
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 8),
-
-                // Category filters as chips
                 SizedBox(
                   height: 40,
                   child: ListView.separated(
@@ -204,20 +212,17 @@ class _ListAssetPageState extends State<ListAssetPage> {
             ),
           ),
           Expanded(
-            // StreamBuilder listens for real-time changes, including new assets
             child: StreamBuilder<List<Asset>>(
               stream: _firestoreService.getAvailableAssets(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
                 final assets = snapshot.data ?? [];
-                // The new asset will be in this list, and then filtered here.
                 final filteredAssets = _filterAssets(assets);
 
                 if (filteredAssets.isEmpty) {
@@ -254,12 +259,11 @@ class _ListAssetPageState extends State<ListAssetPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _assetImage(asset.name),
+                            _assetImage(asset),
                             const SizedBox(height: 8),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8.0,
-                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
                               child: Text(
                                 asset.name,
                                 textAlign: TextAlign.center,
@@ -294,23 +298,16 @@ class _ListAssetPageState extends State<ListAssetPage> {
     );
   }
 
-  // ℹ️ Note: This function still uses asset name to guess the image,
-  // you might want to use asset.imageUrl instead if the admin uploads a custom image.
-  Widget _assetImage(String assetName) {
-    final name = assetName.toLowerCase();
-    String assetPath = 'assets/images/default.png';
+  // ✅ Use category → image mapping
+  Widget _assetImage(Asset asset) {
+    final name = asset.name.toLowerCase();
 
-    if (name.contains('hdmi')) {
-      assetPath = 'assets/images/hdmi.png';
-    } else if (name.contains('usb') || name.contains('pendrive')) {
-      assetPath = 'assets/images/usb.png';
-    } else if (name.contains('projector')) {
-      assetPath = 'assets/images/projector.png';
-    } else if (name.contains('laptop')) {
-      assetPath = 'assets/images/laptop.png';
-    } else if (name.contains('extension') || name.contains('charger')) {
-      assetPath = 'assets/images/extension.png';
-    }
+    String imagePath = defaultAssetImage;
+    assetImageMap.forEach((keyword, path) {
+      if (name.contains(keyword)) {
+        imagePath = path;
+      }
+    });
 
     return Container(
       width: 80,
@@ -321,7 +318,7 @@ class _ListAssetPageState extends State<ListAssetPage> {
       ),
       child: Center(
         child: Image.asset(
-          assetPath,
+          imagePath,
           width: 60,
           height: 60,
           errorBuilder: (_, __, ___) {

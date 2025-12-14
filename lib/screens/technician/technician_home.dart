@@ -5,6 +5,7 @@ import 'technician_notification_page.dart';
 import 'technician_service_page.dart';
 import 'technician_profile_page.dart'; // <-- Import the profile page
 import '../../widgets/footer_nav.dart';
+import '../../services/chat_list_page.dart';
 
 class TechnicianHomePage extends StatelessWidget {
   const TechnicianHomePage({super.key});
@@ -70,6 +71,14 @@ class TechnicianHomePage extends StatelessWidget {
                 ),
               );
             },
+          ),
+          // Messages icon: open chat list (plain white icon)
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const ChatListPage()));
+            },
+            icon: const Icon(Icons.message_outlined, color: Colors.white),
           ),
         ],
       ),

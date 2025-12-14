@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+
+// Assuming these imports lead to your project files:
+import '../../models/asset_model.dart';
+import '../../services/firestore_service.dart';
 import 'package:wetrack/services/chat_list_page.dart';
 import 'package:wetrack/screens/user/logout_page.dart';
 import 'user_notification.dart';
@@ -14,14 +20,19 @@ const LinearGradient mainGradient = LinearGradient(
 // Helper function to determine the color based on asset status
 Color _getStatusColor(String status) {
   switch (status) {
+    case "RETURNED":
     case "Returned":
-      return Colors.green;
+      return Colors.green.shade600;
     case "Ongoing":
-      return Colors.orangeAccent;
+    case "In Use":
+    case "Overdue":
+    case "BORROWED":
+      return Colors.orangeAccent.shade700;
+    case "DECLINED":
     case "Declined":
-      return Colors.red;
+      return Colors.red.shade600;
     default:
-      return Colors.grey;
+      return Colors.grey.shade600;
   }
 }
 
@@ -35,6 +46,8 @@ class UserHistoryPage extends StatefulWidget {
 class _UserHistoryPageState extends State<UserHistoryPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   void initState() {
@@ -48,61 +61,58 @@ class _UserHistoryPageState extends State<UserHistoryPage>
     super.dispose();
   }
 
-  // --- Sample Data ---
-  final ongoingAssets = const [
-    {
-      "name": "HDMI – Type C",
-      "date": "25 Jan 2025 - 30 Jan 2025",
-      "status": "Ongoing",
-      "icon": "assets/images/hdmi.png",
-    },
-    // Add more ongoing items here...
-  ];
-
-  final returnedAssets = const [
-    {
-      "name": "Mouse",
-      "date": "23 Jan 2025 - 25 Jan 2025",
-      "status": "Returned",
-      "icon": "assets/images/mouse.png",
-    },
-    {
-      "name": "RCA Connector",
-      "date": "23 Dec 2024 - 25 Dec 2024",
-      "status": "Returned",
-      "icon": "assets/images/rca.png",
-    },
-  ];
-
-  final declinedAssets = const [
-    {
-      "name": "Extension Cable",
-      "date": "15 Jan 2025 - 20 Jan 2025",
-      "status": "Declined",
-      "icon": "assets/images/extension.png",
-    },
-  ];
-
   // --- Widget Builders ---
 
-  Widget _buildAssetList(
-      BuildContext context, List<Map<String, String>> assets) {
-    if (assets.isEmpty) {
-      return const Center(
-        child: Text(
-          "No records available",
-          style: TextStyle(color: Colors.black54, fontSize: 16),
-        ),
-      );
+  Widget _buildAssetList(BuildContext context, String statusFilter) {
+    final userId = _auth.currentUser?.uid;
+
+    if (userId == null) {
+      return const Center(child: Text("Please log in to view history."));
+    }
+
+    Stream<List<Asset>> assetStream;
+    if (statusFilter == 'Ongoing') {
+      // Use getBorrowedAssets for 'Ongoing' (status == 'BORROWED')
+      assetStream = _firestoreService.getBorrowedAssets(userId);
+    } else {
+      // Use getHistoryByStatusAndUser for 'Returned' and 'Declined'
+      assetStream =
+          _firestoreService.getHistoryByStatusAndUser(userId, statusFilter);
     }
 
     final bottomPadding = MediaQuery.of(context).padding.bottom + 80;
 
-    return ListView.builder(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding),
-      itemCount: assets.length,
-      itemBuilder: (context, index) {
-        return _AssetListItem(asset: assets[index]);
+    return StreamBuilder<List<Asset>>(
+      stream: assetStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          debugPrint('History Error: ${snapshot.error}');
+          return Center(
+              child: Text('Error loading history: ${snapshot.error}'));
+        }
+
+        final assets = snapshot.data ?? [];
+
+        if (assets.isEmpty) {
+          return Center(
+            child: Text(
+              "No history records found under: '$statusFilter'",
+              style: const TextStyle(color: Colors.black54, fontSize: 16),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPadding),
+          itemCount: assets.length,
+          itemBuilder: (context, index) {
+            return _AssetListItem(asset: assets[index]);
+          },
+        );
       },
     );
   }
@@ -112,8 +122,7 @@ class _UserHistoryPageState extends State<UserHistoryPage>
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(
-            130), // Increased height to accommodate the large TabBar
+        preferredSize: const Size.fromHeight(130),
         child: Container(
           decoration: const BoxDecoration(gradient: mainGradient),
           child: Column(
@@ -161,8 +170,7 @@ class _UserHistoryPageState extends State<UserHistoryPage>
                 ),
                 child: TabBar(
                   controller: _tabController,
-                  dividerColor:
-                      Colors.transparent, // Fix to remove vertical line/divider
+                  dividerColor: Colors.transparent,
                   indicator: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(40),
@@ -194,9 +202,9 @@ class _UserHistoryPageState extends State<UserHistoryPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildAssetList(context, ongoingAssets),
-          _buildAssetList(context, returnedAssets),
-          _buildAssetList(context, declinedAssets),
+          _buildAssetList(context, 'Ongoing'),
+          _buildAssetList(context, 'RETURNED'),
+          _buildAssetList(context, 'DECLINED'),
         ],
       ),
       bottomNavigationBar: _buildBottomNavBar(context),
@@ -204,20 +212,61 @@ class _UserHistoryPageState extends State<UserHistoryPage>
   }
 }
 
-// Extracted widget for a single asset list item
+// Extracted widget for a single asset list item - USES ASSET MODEL
 class _AssetListItem extends StatelessWidget {
-  final Map<String, String> asset;
+  final Asset asset;
 
   const _AssetListItem({required this.asset});
 
+  // Helper to format the date range
+  String _formatDateRange(Asset asset) {
+    if (asset.status == 'Ongoing' || asset.status == 'BORROWED') {
+      final start = asset.borrowDate != null
+          ? DateFormat('dd MMM yyyy').format(asset.borrowDate!)
+          : 'N/A';
+      final due = asset.dueDateTime != null
+          ? DateFormat('dd MMM yyyy').format(asset.dueDateTime!)
+          : 'N/A';
+      return 'Borrowed: $start - Due: $due';
+    } else if (asset.status == 'RETURNED' || asset.status == 'Returned') {
+      final start = asset.borrowDate != null
+          ? DateFormat('dd MMM yyyy').format(asset.borrowDate!)
+          : 'N/A';
+      final returned = asset.returnDate != null
+          ? DateFormat('dd MMM yyyy').format(asset.returnDate!)
+          : 'N/A';
+      return 'Used: $start - Returned: $returned';
+    } else if (asset.status == 'DECLINED' || asset.status == 'Declined') {
+      // For declined, show the date requested
+      final requested = asset.borrowDate != null
+          ? DateFormat('dd MMM yyyy').format(asset.borrowDate!)
+          : 'N/A';
+      return 'Requested: $requested';
+    }
+    return 'Date N/A';
+  }
+
+  // Helper to determine image path (Placeholder/Simple Logic)
+  String _getImagePath(String assetName) {
+    final name = assetName.toLowerCase();
+    if (name.contains('hdmi')) return 'assets/images/hdmi.jpg';
+    if (name.contains('usb') || name.contains('pendrive'))
+      return 'assets/images/usb.png';
+    if (name.contains('projector')) return 'assets/images/projector.png';
+    if (name.contains('laptop')) return 'assets/images/dell.jpg';
+    if (name.contains('extension') || name.contains('charger'))
+      return 'assets/images/extension.png';
+    return 'assets/images/default.png';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final status = asset["status"]!;
-    final statusColor = _getStatusColor(status);
+    // Convert 'BORROWED' status from database to 'Ongoing' for UI display
+    final displayStatus = asset.status == 'BORROWED' ? 'Ongoing' : asset.status;
+    final statusColor = _getStatusColor(displayStatus);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      // Increased vertical padding for better spacing
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
       decoration: BoxDecoration(
         gradient: mainGradient,
@@ -235,11 +284,22 @@ class _AssetListItem extends StatelessWidget {
         children: [
           // Asset icon
           CircleAvatar(
-            radius: 30, // Slightly reduced radius for better fit
+            radius: 30,
             backgroundColor: const Color(0xFFEFF9F9),
-            backgroundImage: AssetImage(asset["icon"]!),
+            child: ClipOval(
+              child: Image.asset(
+                _getImagePath(asset.name),
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.devices_other,
+                  color: Color(0xFF00A7A7),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 20), // Adjusted horizontal spacing
+          const SizedBox(width: 20),
 
           // Asset info
           Expanded(
@@ -247,7 +307,7 @@ class _AssetListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  asset["name"]!,
+                  asset.name,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -256,7 +316,7 @@ class _AssetListItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  asset["date"]!,
+                  _formatDateRange(asset),
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -273,11 +333,11 @@ class _AssetListItem extends StatelessWidget {
               vertical: 5,
             ),
             decoration: BoxDecoration(
-              color: Colors.white, // Use solid white for contrast
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              status,
+              displayStatus,
               style: TextStyle(
                 color: statusColor,
                 fontWeight: FontWeight.bold,
@@ -291,7 +351,7 @@ class _AssetListItem extends StatelessWidget {
   }
 }
 
-// Extracted AppBar icon builder
+// Extracted AppBar icon builder (No change)
 Widget _buildAppBarIcon(
     BuildContext context, IconData icon, Widget destination) {
   return IconButton(
@@ -303,7 +363,7 @@ Widget _buildAppBarIcon(
   );
 }
 
-// Extracted Bottom Navigation Bar
+// Extracted Bottom Navigation Bar (No change)
 Widget _buildBottomNavBar(BuildContext context) {
   return Container(
     decoration: const BoxDecoration(
@@ -344,9 +404,8 @@ Widget _buildBottomNavBar(BuildContext context) {
         ],
         onTap: (index) {
           if (index == 0) {
-            Navigator.pop(context); // Assumes 'Home' is the previous screen
+            Navigator.pop(context);
           } else if (index == 1) {
-            // Placeholder: Assuming '/scanqr' is a defined route
             Navigator.pushNamed(context, '/scanqr');
           } else if (index == 2) {
             Navigator.push(

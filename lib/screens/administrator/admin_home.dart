@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../widgets/footer_nav.dart';
+import '../../services/chat_list_page.dart';
 import 'admin_activity_page.dart';
 import 'asset_list_page.dart';
 import 'admin_request_page.dart';
-import 'admin_profile_page.dart'; 
+import 'admin_profile_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -128,6 +129,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {},
+          ),
+          // Messages icon: open chat list
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const ChatListPage()));
+            },
+            icon: const Icon(Icons.message_outlined, color: Colors.white),
           ),
         ],
       ),
@@ -278,7 +287,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 ),
               ],
             ),
-
             child: Center(
               child: ShaderMask(
                 shaderCallback: (Rect bounds) {
@@ -367,8 +375,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                   child: Text(
                     request['status']!,
-                    style:
-                        TextStyle(color: color, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold),
                   ),
                 )
               ],
