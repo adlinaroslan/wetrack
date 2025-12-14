@@ -3,6 +3,7 @@ import 'asset_list_page.dart';
 import 'technician_activity_page.dart';
 import 'technician_notification_page.dart';
 import 'technician_service_page.dart';
+import 'technician_profile_page.dart'; // <-- Import the profile page
 import '../../widgets/footer_nav.dart';
 
 class TechnicianHomePage extends StatelessWidget {
@@ -46,6 +47,19 @@ class TechnicianHomePage extends StatelessWidget {
           ),
         ),
         actions: [
+          // Profile button
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TechnicianProfilePage(),
+                ),
+              );
+            },
+          ),
+          // Notification button
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {
@@ -136,7 +150,7 @@ class TechnicianHomePage extends StatelessWidget {
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundColor:
-                            const Color(0xFF00BFA6).withValues(alpha: 0.15),
+                            const Color(0xFF00BFA6).withOpacity(0.15),
                         child: ShaderMask(
                           shaderCallback: (Rect bounds) => const LinearGradient(
                             colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
@@ -155,7 +169,7 @@ class TechnicianHomePage extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.18),
+                          color: color.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

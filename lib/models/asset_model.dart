@@ -34,7 +34,7 @@ class Asset {
     this.returnDate,
   });
 
-  /// Convert Firestore document → Asset object
+  /// Firestore → Asset
   factory Asset.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
 
@@ -78,7 +78,7 @@ class Asset {
     );
   }
 
-  /// Convert Asset → Firestore Map
+  /// Asset → Firestore Map
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
@@ -100,7 +100,7 @@ class Asset {
     };
   }
 
-  /// Convert Asset → JSON (for QR Code)
+  /// Asset → JSON (for QR Code)
   Map<String, dynamic> toJson() {
     return {
       'docId': docId,
@@ -121,4 +121,35 @@ class Asset {
   }
 
   String get qrData => id;
+
+  /// Optional: copyWith for future use
+  Asset copyWith({
+    String? docId,
+    String? id,
+    String? serialNumber,
+    String? name,
+    String? brand,
+    String? category,
+    String? imageUrl,
+    String? location,
+    String? status,
+    String? registerDate,
+    String? borrowedByUserId,
+    DateTime? dueDateTime,
+  }) {
+    return Asset(
+      docId: docId ?? this.docId,
+      id: id ?? this.id,
+      serialNumber: serialNumber ?? this.serialNumber,
+      name: name ?? this.name,
+      brand: brand ?? this.brand,
+      category: category ?? this.category,
+      imageUrl: imageUrl ?? this.imageUrl,
+      location: location ?? this.location,
+      status: status ?? this.status,
+      registerDate: registerDate ?? this.registerDate,
+      borrowedByUserId: borrowedByUserId ?? this.borrowedByUserId,
+      dueDateTime: dueDateTime ?? this.dueDateTime,
+    );
+  }
 }

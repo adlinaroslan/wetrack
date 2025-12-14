@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/asset_model.dart';
 import 'edit_asset_page.dart';
+import 'qr_viewer_page.dart'; 
 
 class AssetDetailPage extends StatelessWidget {
   final Asset asset;
@@ -61,6 +62,32 @@ class AssetDetailPage extends StatelessWidget {
 
               // INFO CARD
               _buildInfoCard(context, asset),
+
+              const SizedBox(height: 20),
+
+              // ✅ QR Code Button
+              Center(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00A7A7),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.qr_code),
+                  label: const Text("View QR Code"),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => QRViewerPage(asset: asset),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -79,7 +106,6 @@ class AssetDetailPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

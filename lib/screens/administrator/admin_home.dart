@@ -4,6 +4,7 @@ import '../../widgets/footer_nav.dart';
 import 'admin_activity_page.dart';
 import 'asset_list_page.dart';
 import 'admin_request_page.dart';
+import 'admin_profile_page.dart'; 
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -112,7 +113,18 @@ class _AdminHomePageState extends State<AdminHomePage> {
             ),
           ),
         ),
+
+        // ⭐ ONLY CHANGE MADE HERE: Added Profile Icon
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminProfilePage()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {},
@@ -256,7 +268,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             height: 70,
             width: 70,
             decoration: BoxDecoration(
-              color: Colors.white, // background stays white
+              color: Colors.white,
               borderRadius: BorderRadius.circular(15),
               boxShadow: const [
                 BoxShadow(
@@ -267,7 +279,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
               ],
             ),
 
-            // Gradient icon
             child: Center(
               child: ShaderMask(
                 shaderCallback: (Rect bounds) {
@@ -280,7 +291,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 child: Icon(
                   icon,
                   size: 35,
-                  color: Colors.white, // required for ShaderMask
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -292,7 +303,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Asset Info Card
   Widget _infoCard({
     required IconData icon,
     required String title,
@@ -321,7 +331,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               child: Icon(
                 icon,
                 size: 28,
-                color: Colors.white, // Required for ShaderMask
+                color: Colors.white,
               ),
             ),
           ),
@@ -332,7 +342,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Request Card
   Widget _requestCard(Map<String, String> request) {
     final color = _statusColor(request['status']!);
     return Card(
@@ -356,9 +365,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     color: color.withAlpha(51),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(request['status']!,
-                      style:
-                          TextStyle(color: color, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    request['status']!,
+                    style:
+                        TextStyle(color: color, fontWeight: FontWeight.bold),
+                  ),
                 )
               ],
             ),
@@ -368,7 +379,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Graph for monthly asset usage
   Widget _assetUsageGraph() {
     final months = _yearlyUsage[_selectedYear]!.keys.toList();
     final usageValues = _yearlyUsage[_selectedYear]!.values.toList();
