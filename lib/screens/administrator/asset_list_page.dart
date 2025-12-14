@@ -184,15 +184,18 @@ class _AssetListPageState extends State<AssetListPage> {
                           child: Column(
                             children: [
                               // TOP IMAGE
+                              
                               Expanded(
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(15)),
-                                  child: Image.network(
-                                    asset.imageUrl,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                  ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8), 
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.asset(
+                                      asset.imageUrl,
+                                      fit: BoxFit.contain, 
+                                      width: double.infinity,
+                                    ),
+                                ),
                                 ),
                               ),
 
@@ -203,16 +206,16 @@ class _AssetListPageState extends State<AssetListPage> {
                                 child: Column(
                                   children: [
                                     Text(
-                                      asset.id,
+                                      asset.name,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16),
+                                          fontSize: 14),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      asset.name,
+                                      asset.id,
                                       style: const TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 11,
                                         color: Colors.black87,
                                       ),
                                       textAlign: TextAlign.center,
