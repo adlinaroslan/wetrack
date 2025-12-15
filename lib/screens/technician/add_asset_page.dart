@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 class AddAssetPage extends StatefulWidget {
   const AddAssetPage({super.key});
@@ -15,6 +12,9 @@ class AddAssetPage extends StatefulWidget {
 class _AddAssetPageState extends State<AddAssetPage> {
   final _formKey = GlobalKey<FormState>();
 
+  // ============================
+  // TEXT CONTROLLERS
+  // ============================
   final TextEditingController idController = TextEditingController();
   final TextEditingController serialController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
@@ -23,64 +23,30 @@ class _AddAssetPageState extends State<AddAssetPage> {
 
   String? category;
   String status = "In Stock";
-
-  File? assetImage;
-  final picker = ImagePicker();
+  String? selectedImage;
 
   // ============================
-  // CHOOSE IMAGE
+  // IMAGE OPTIONS
   // ============================
-  Future<void> pickImageSheet() async {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => SizedBox(
-        height: 150,
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text("Choose from Gallery"),
-              onTap: () async {
-                Navigator.pop(context);
-                final XFile? img =
-                    await picker.pickImage(source: ImageSource.gallery);
-                if (img != null) setState(() => assetImage = File(img.path));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text("Take Photo"),
-              onTap: () async {
-                Navigator.pop(context);
-                final XFile? img =
-                    await picker.pickImage(source: ImageSource.camera);
-                if (img != null) setState(() => assetImage = File(img.path));
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================
-  // UPLOAD IMAGE
-  // ============================
-  Future<String> uploadImage(File file) async {
-    final fileName =
-        '${idController.text}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child("asset_images")
-        .child(fileName);
-
-    await ref.putFile(file);
-    return await ref.getDownloadURL();
-  }
+  final Map<String, String> imageOptions = {
+    'Laminator': 'assets/images/laminator.png',
+    'Apacer': 'assets/images/apacer.png',
+    'Maxell': 'assets/images/maxell.jpg',
+    'Acer': 'assets/images/acer.png',
+    'TV Mount Bracket': 'assets/images/tv mount bracket.jpg',
+    'Sandisk': 'assets/images/sandisk.jpg',
+    'Cable': 'assets/images/cable.png',
+    'Keelat': 'assets/images/keelat.jpg',
+    'Cordless Blower': 'assets/images/cordless blower.jpg',
+    'Portable Voice Amplifier':
+        'assets/images/portable voice amplifier.jpg',
+    'HDMI': 'assets/images/hdmi.jpg',
+    'VGA': 'assets/images/VGA.jpg',
+    'UGreen Adapter': 'assets/images/ugreen adapter.jpg',
+    'Microphone Stand': 'assets/images/mic stand.png',
+    'RASPBERRY PI 4B': 'assets/images/RASPBERRY PI 4B.jpg',
+    'HyperX': 'assets/images/hyperx.jpg',
+  };
 
   // ============================
   // SAVE ASSET
@@ -88,32 +54,39 @@ class _AddAssetPageState extends State<AddAssetPage> {
   Future<void> saveAsset() async {
     if (!_formKey.currentState!.validate()) return;
 
-    String imageUrl = "assets/default.png";
+    final assetId = idController.text.trim();
 
     try {
-      if (assetImage != null) {
-        imageUrl = await uploadImage(assetImage!);
+      final docRef =
+          FirebaseFirestore.instance.collection('assets').doc(assetId);
+
+      if ((await docRef.get()).exists) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Asset ID already exists")),
+        );
+        return;
       }
 
-      await FirebaseFirestore.instance.collection("assets").add({
-        "id": idController.text.trim(),
-        "serialNumber": serialController.text.trim(),
-        "name": nameController.text.trim(),
-        "brand": brandController.text.trim(),
-        "category": category,
-        "status": status,
-        "imageUrl": imageUrl,
-        "location": "Available",
-        "registerDate": registerDateController.text.trim(),
-        "createdAt": FieldValue.serverTimestamp(),
+      await docRef.set({
+        'id': assetId,
+        'serialNumber': serialController.text.trim(),
+        'name': nameController.text.trim(),
+        'brand': brandController.text.trim(),
+        'category': category,
+        'imageUrl': selectedImage,
+        'location': 'Available',
+        'status': status,
+        'registerDate': registerDateController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Asset added successfully")),
-        );
-        Navigator.pop(context);
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Asset added successfully")),
+      );
+      Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to add asset: $e")),
@@ -121,15 +94,16 @@ class _AddAssetPageState extends State<AddAssetPage> {
     }
   }
 
+  // ============================
+  // UI
+  // ============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-
-      // ░░ GRADIENT APPBAR ░░
       appBar: AppBar(
         elevation: 0,
-        title: const Text("Add New Asset"),
+        title: const Text("Add Asset"),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -140,47 +114,88 @@ class _AddAssetPageState extends State<AddAssetPage> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              // IMAGE PICKER
-              Center(
-                child: GestureDetector(
-                  onTap: pickImageSheet,
-                  child: CircleAvatar(
-                    radius: 55,
-                    backgroundColor: const Color(0xFF00A7A7),
-                    backgroundImage:
-                        assetImage != null ? FileImage(assetImage!) : null,
-                    child: assetImage == null
-                        ? const Icon(Icons.camera_alt,
-                            size: 50, color: Colors.white)
-                        : null,
-                  ),
-                ),
+              // ============================
+              // IMAGE PREVIEW
+              // ============================
+              CircleAvatar(
+                radius: 58,
+                backgroundColor: Colors.white,
+                backgroundImage:
+                    selectedImage != null ? AssetImage(selectedImage!) : null,
+                child: selectedImage == null
+                    ? const Icon(Icons.image,
+                        size: 42, color: Colors.grey)
+                    : null,
               ),
-              const SizedBox(height: 20),
 
-              // FIELDS
-              _buildTextField(idController, "Asset ID", Icons.qr_code),
-              _buildTextField(serialController, "Serial Number", Icons.tag),
-              _buildTextField(nameController, "Asset Name", Icons.devices),
-              _buildTextField(brandController, "Brand", Icons.business),
+              const SizedBox(height: 22),
 
-              // DATE PICKER
+              // ============================
+              // IMAGE DROPDOWN
+              // ============================
+              DropdownButtonFormField<String>(
+                value: selectedImage,
+                decoration: _inputDecoration("Asset Image"),
+                items: imageOptions.entries.map((e) {
+                  return DropdownMenuItem(
+                    value: e.value,
+                    child: Row(
+                      children: [
+                        Image.asset(e.value, width: 28),
+                        const SizedBox(width: 10),
+                        Text(e.key),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => selectedImage = value),
+                validator: (v) =>
+                    v == null ? "Please choose an image" : null,
+              ),
+
+              const SizedBox(height: 16),
+
+              _buildTextField(
+                controller: idController,
+                label: "Asset ID",
+                icon: Icons.qr_code,
+                isId: true,
+              ),
+              _buildTextField(
+                controller: serialController,
+                label: "Serial Number",
+                icon: Icons.tag,
+              ),
+              _buildTextField(
+                controller: nameController,
+                label: "Asset Name",
+                icon: Icons.devices,
+              ),
+              _buildTextField(
+                controller: brandController,
+                label: "Brand",
+                icon: Icons.business,
+              ),
+
+              // ============================
+              // REGISTER DATE
+              // ============================
               TextFormField(
                 controller: registerDateController,
                 readOnly: true,
-                decoration: _inputDecoration().copyWith(
-                  labelText: "Register Date",
-                  prefixIcon: const Icon(Icons.calendar_today),
+                decoration: _inputDecoration("Register Date").copyWith(
+                  prefixIcon:
+                      const Icon(Icons.calendar_today, color: Color(0xFF004C5C)),
                 ),
                 onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
+                  final pickedDate = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
                     firstDate: DateTime(2000),
@@ -194,13 +209,12 @@ class _AddAssetPageState extends State<AddAssetPage> {
                 validator: (v) =>
                     v == null || v.isEmpty ? "Please select date" : null,
               ),
+
               const SizedBox(height: 16),
 
               // CATEGORY
               DropdownButtonFormField<String>(
-                decoration: _inputDecoration().copyWith(
-                  labelText: "Category",
-                ),
+                decoration: _inputDecoration("Category"),
                 items: const [
                   DropdownMenuItem(value: "Monitor", child: Text("Monitor")),
                   DropdownMenuItem(value: "Desktop", child: Text("Desktop")),
@@ -214,23 +228,28 @@ class _AddAssetPageState extends State<AddAssetPage> {
                 validator: (v) =>
                     v == null ? "Please choose a category" : null,
               ),
+
               const SizedBox(height: 16),
 
               // STATUS
               DropdownButtonFormField<String>(
                 value: status,
-                decoration: _inputDecoration().copyWith(labelText: "Status"),
+                decoration: _inputDecoration("Status"),
                 items: const [
-                  DropdownMenuItem(value: "In Stock", child: Text("In Stock")),
+                  DropdownMenuItem(
+                      value: "In Stock", child: Text("In Stock")),
                   DropdownMenuItem(value: "In Use", child: Text("In Use")),
                   DropdownMenuItem(
                       value: "Re-Purchased Needed",
                       child: Text("Re-Purchased Needed")),
-                  DropdownMenuItem(value: "Sold Out", child: Text("Sold Out")),
+                  DropdownMenuItem(
+                      value: "Sold Out", child: Text("Sold Out")),
                 ],
-                onChanged: (value) => setState(() => status = value!),
+                onChanged: (value) =>
+                    setState(() => status = value!),
               ),
-              const SizedBox(height: 30),
+
+              const SizedBox(height: 32),
 
               // SAVE BUTTON
               ElevatedButton.icon(
@@ -241,7 +260,7 @@ class _AddAssetPageState extends State<AddAssetPage> {
                   backgroundColor: const Color(0xFF00A7A7),
                   foregroundColor: Colors.white,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                      const EdgeInsets.symmetric(horizontal: 42, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -255,28 +274,37 @@ class _AddAssetPageState extends State<AddAssetPage> {
   }
 
   // ============================
-  // UI HELPERS
+  // HELPERS
   // ============================
-  Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isId = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
-        decoration: _inputDecoration().copyWith(
-          labelText: label,
+        decoration: _inputDecoration(label).copyWith(
           prefixIcon: Icon(icon, color: const Color(0xFF004C5C)),
         ),
-        validator: (v) => v == null || v.isEmpty ? "Required field" : null,
+        validator: (v) {
+          if (v == null || v.isEmpty) return "Required field";
+          if (isId && v.contains('/')) {
+            return "Asset ID cannot contain '/' character";
+          }
+          return null;
+        },
       ),
     );
   }
 
-  InputDecoration _inputDecoration() {
+  InputDecoration _inputDecoration(String label) {
     return InputDecoration(
+      labelText: label,
       filled: true,
       fillColor: Colors.white,
-      labelStyle: const TextStyle(color: Color(0xFF004C5C)),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,

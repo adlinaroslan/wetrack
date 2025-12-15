@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/asset_model.dart';
 import 'edit_asset_page.dart';
-import 'qr_viewer_page.dart'; 
+import 'qr_viewer_page.dart';
 
 class AssetDetailPage extends StatelessWidget {
   final Asset asset;
@@ -26,52 +26,43 @@ class AssetDetailPage extends StatelessWidget {
           ),
         ),
         actions: [
-          // Edit button
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => EditAssetPage(asset: asset)),
+                MaterialPageRoute(
+                  builder: (_) => EditAssetPage(asset: asset),
+                ),
               );
             },
           ),
-
-          // Dispose button
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: () {
-              _confirmDispose(context, asset);
-            },
+            onPressed: () => _confirmDispose(context, asset),
           ),
         ],
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // SECTION TITLE
               const Text(
                 "Asset Information",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-
-              // INFO CARD
               _buildInfoCard(context, asset),
-
               const SizedBox(height: 20),
-
-              // ✅ QR Code Button
               Center(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00A7A7),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -95,40 +86,34 @@ class AssetDetailPage extends StatelessWidget {
     );
   }
 
-  // -------------------------------
+  // ===============================
   // INFO CARD
-  // -------------------------------
+  // ===============================
   Widget _buildInfoCard(BuildContext context, Asset asset) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // IMAGE (NETWORK)
+          // IMAGE
           Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: asset.imageUrl.startsWith("http")
-                  ? Image.network(
-                      asset.imageUrl,
-                      height: 160,
-                      width: 160,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Image.asset('assets/default.png',
-                              height: 160, width: 160, fit: BoxFit.cover),
-                    )
-                  : Image.asset(
-                      'assets/default.png',
-                      height: 160,
-                      width: 160,
-                      fit: BoxFit.cover,
-                    ),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: _buildAssetImage(asset.imageUrl),
+              ),
             ),
           ),
 
@@ -154,9 +139,49 @@ class AssetDetailPage extends StatelessWidget {
     );
   }
 
-  // -------------------------------
-  // REUSABLE ROW
-  // -------------------------------
+  // ===============================
+  // IMAGE HANDLER (NO DEFAULT IMAGE)
+  // ===============================
+  Widget _buildAssetImage(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return _imagePlaceholder();
+    }
+
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        height: 160,
+        width: 160,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _imagePlaceholder(),
+      );
+    }
+
+    return Image.asset(
+      imageUrl,
+      height: 160,
+      width: 160,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => _imagePlaceholder(),
+    );
+  }
+
+  Widget _imagePlaceholder() {
+    return Container(
+      height: 160,
+      width: 160,
+      color: Colors.grey.shade100,
+      child: const Icon(
+        Icons.image_not_supported,
+        size: 48,
+        color: Colors.grey,
+      ),
+    );
+  }
+
+  // ===============================
+  // INFO ROW
+  // ===============================
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -164,18 +189,15 @@ class AssetDetailPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.black54)),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  // -------------------------------
-  // DISPOSAL POPUP
-  // -------------------------------
+  // ===============================
+  // DISPOSE
+  // ===============================
   void _confirmDispose(BuildContext context, Asset asset) {
     showDialog(
       context: context,
@@ -184,8 +206,8 @@ class AssetDetailPage extends StatelessWidget {
         content: Text("Are you sure you want to dispose '${asset.name}'?"),
         actions: [
           TextButton(
-            child: const Text("Cancel"),
             onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),

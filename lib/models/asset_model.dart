@@ -8,7 +8,7 @@ class Asset {
   final String name;
   final String brand;
   final String category;
-  final String imageUrl;
+  final String imageUrl; // REQUIRED
   final String location;
   final String status;
   final String? registerDate;
@@ -24,8 +24,8 @@ class Asset {
     required this.name,
     required this.brand,
     required this.category,
-    this.imageUrl = 'assets/default.png',
-    this.location = 'Available',
+    required this.imageUrl,
+    required this.location,
     required this.status,
     this.registerDate,
     this.borrowedByUserId,
@@ -34,22 +34,29 @@ class Asset {
     this.returnDate,
   });
 
-  /// Firestore → Asset
+  // ============================
+  // Firestore → Asset
+  // ============================
   factory Asset.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
 
     if (data == null) {
-      throw Exception("Document data was null for Asset docId: ${doc.id}");
+      throw Exception("Asset data is null for docId: ${doc.id}");
     }
 
-    String? _getRegisterDate(dynamic dateValue) {
-      if (dateValue == null) return null;
-      if (dateValue is String) {
-        return dateValue;
-      } else if (dateValue is Timestamp) {
-        return DateFormat("dd MMM yyyy").format(dateValue.toDate());
+    String? parseRegisterDate(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Timestamp) {
+        return DateFormat("dd MMM yyyy").format(value.toDate());
       }
       return null;
+    }
+
+    // 🔴 HARD FAIL IF IMAGE MISSING (GOOD!)
+    final imageUrl = data['imageUrl'];
+    if (imageUrl == null || imageUrl.toString().isEmpty) {
+      throw Exception("Asset ${doc.id} has no imageUrl saved");
     }
 
     return Asset(
@@ -59,26 +66,20 @@ class Asset {
       name: data['name'] ?? 'Unknown',
       brand: data['brand'] ?? 'Unknown',
       category: data['category'] ?? 'General',
-      imageUrl: data['imageUrl'] ?? 'assets/default.png',
+      imageUrl: imageUrl,
       location: data['location'] ?? 'Available',
-      status: data['status'] ?? 'Active',
-      registerDate: _getRegisterDate(data['registerDate']),
+      status: data['status'] ?? 'In Stock',
+      registerDate: parseRegisterDate(data['registerDate']),
       borrowedByUserId: data['borrowedByUserId'],
       dueDateTime: data['dueDateTime'] != null
           ? (data['dueDateTime'] as Timestamp).toDate()
           : null,
-
-      // MAPPING NEW FIELDS
-      borrowDate: data['borrowDate'] != null
-          ? (data['borrowDate'] as Timestamp).toDate()
-          : null,
-      returnDate: data['returnDate'] != null
-          ? (data['returnDate'] as Timestamp).toDate()
-          : null,
     );
   }
 
-  /// Asset → Firestore Map
+  // ============================
+  // Asset → Firestore
+  // ============================
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
@@ -93,63 +94,8 @@ class Asset {
       'borrowedByUserId': borrowedByUserId,
       'dueDateTime':
           dueDateTime != null ? Timestamp.fromDate(dueDateTime!) : null,
-      'borrowDate':
-          borrowDate != null ? Timestamp.fromDate(borrowDate!) : null, // NEW
-      'returnDate':
-          returnDate != null ? Timestamp.fromDate(returnDate!) : null, // NEW
-    };
-  }
-
-  /// Asset → JSON (for QR Code)
-  Map<String, dynamic> toJson() {
-    return {
-      'docId': docId,
-      'id': id,
-      'serialNumber': serialNumber,
-      'name': name,
-      'brand': brand,
-      'category': category,
-      'imageUrl': imageUrl,
-      'location': location,
-      'status': status,
-      'registerDate': registerDate,
-      'borrowedByUserId': borrowedByUserId,
-      'dueDateTime': dueDateTime?.toIso8601String(),
-      'borrowDate': borrowDate?.toIso8601String(), // NEW
-      'returnDate': returnDate?.toIso8601String(), // NEW
     };
   }
 
   String get qrData => id;
-
-  /// Optional: copyWith for future use
-  Asset copyWith({
-    String? docId,
-    String? id,
-    String? serialNumber,
-    String? name,
-    String? brand,
-    String? category,
-    String? imageUrl,
-    String? location,
-    String? status,
-    String? registerDate,
-    String? borrowedByUserId,
-    DateTime? dueDateTime,
-  }) {
-    return Asset(
-      docId: docId ?? this.docId,
-      id: id ?? this.id,
-      serialNumber: serialNumber ?? this.serialNumber,
-      name: name ?? this.name,
-      brand: brand ?? this.brand,
-      category: category ?? this.category,
-      imageUrl: imageUrl ?? this.imageUrl,
-      location: location ?? this.location,
-      status: status ?? this.status,
-      registerDate: registerDate ?? this.registerDate,
-      borrowedByUserId: borrowedByUserId ?? this.borrowedByUserId,
-      dueDateTime: dueDateTime ?? this.dueDateTime,
-    );
-  }
 }
