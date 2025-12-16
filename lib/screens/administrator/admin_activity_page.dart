@@ -1,53 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/asset_model.dart';
+import '../../models/request_model.dart';
 import 'admin_asset_detail_page.dart';
 import '../../widgets/footer_nav.dart';
 
-class AdminActivityPage extends StatelessWidget {
+class AdminActivityPage extends StatefulWidget {
   const AdminActivityPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Dummy Assets (MUST match Asset model)
-    final List<Asset> assets = [
-      Asset(
-        docId: "1",
-        id: "A67495",
-        serialNumber: "SN-001",
-        name: "Dell Laptop",
-        brand: "Dell",
-        category: "Laptop",
-        imageUrl: "assets/default.png",
-        location: "HQ Office",
-        status: "Active",
-        registerDate: "2024-02-01",
-      ),
-      Asset(
-        docId: "2",
-        id: "AD3535",
-        serialNumber: "SN-002",
-        name: "My Name",
-        brand: "Brand X",
-        category: "Device",
-        imageUrl: "assets/default.png",
-        location: "HQ Office",
-        status: "Active",
-        registerDate: "2024-03-01",
-      ),
-      Asset(
-        docId: "3",
-        id: "AD3636",
-        serialNumber: "SN-003",
-        name: "My Name",
-        brand: "Brand Y",
-        category: "Device",
-        imageUrl: "assets/default.png",
-        location: "HQ Office",
-        status: "Active",
-        registerDate: "2024-04-01",
-      ),
-    ];
+  State<AdminActivityPage> createState() => _AdminActivityPageState();
+}
 
+class _AdminActivityPageState extends State<AdminActivityPage> {
+  String searchKeyword = '';
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Asset Tracking"),
@@ -62,65 +31,115 @@ class AdminActivityPage extends StatelessWidget {
           ),
         ),
       ),
+
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            /// 🔍 SEARCH BAR
             TextField(
               decoration: InputDecoration(
-                labelText: "Select Asset ID / BL Number",
-                hintText: "asset id / BL number",
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {},
-                ),
+                labelText: "Search Asset ID / Serial / Name",
+                suffixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
+              onChanged: (value) {
+                setState(() {
+                  searchKeyword = value.toLowerCase();
+                });
+              },
             ),
+
             const SizedBox(height: 16),
 
-            // LISTVIEW FIXED
+            /// 🔥 ASSET LIST
             Expanded(
-              child: ListView.builder(
-                itemCount: assets.length,
-                itemBuilder: (context, index) {
-                  final asset = assets[index];
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('assets')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                  return Card(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text("Asset ID: ${asset.id}"),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Asset Name: ${asset.name}"),
-                          Text("Serial Number: ${asset.serialNumber}"),
-                          Text("User: ${asset.location}"), // you can change later
-                        ],
-                      ),
-                      trailing: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AssetDetailPage(asset: asset),
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text("No assets found"));
+                  }
+
+                  final assets = snapshot.data!.docs
+                      .map((doc) => Asset.fromFirestore(doc))
+                      .where((asset) =>
+                          asset.id.toLowerCase().contains(searchKeyword) ||
+                          asset.name.toLowerCase().contains(searchKeyword) ||
+                          asset.serialNumber
+                              .toLowerCase()
+                              .contains(searchKeyword))
+                      .toList();
+
+                  return ListView.builder(
+                    itemCount: assets.length,
+                    itemBuilder: (context, index) {
+                      final asset = assets[index];
+
+                      return Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          title: Text("Asset ID: ${asset.id}"),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Name: ${asset.name}"),
+                              Text("Serial: ${asset.serialNumber}"),
+                              Text("Status: ${asset.status}"),
+                            ],
+                          ),
+                          trailing: TextButton(
+                            child: const Text(
+                              "View Detail",
+                              style: TextStyle(
+                                color: Color(0xFF00A7A7),
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          );
-                        },
-                        child: const Text(
-                          "View Detail",
-                          style: TextStyle(
-                            color: Color(0xFF00A7A7),
-                            fontWeight: FontWeight.bold,
+                            onPressed: () async {
+                              AssetRequest? activeRequest;
+
+                              /// 🔥 GET CURRENT ACTIVE (APPROVED) REQUEST
+                              final reqSnapshot = await FirebaseFirestore
+                                  .instance
+                                  .collection('requests')
+                                  .where('assetId', isEqualTo: asset.id)
+                                  .where('status', isEqualTo: 'APPROVED')
+                                  .limit(1)
+                                  .get();
+
+                              if (reqSnapshot.docs.isNotEmpty) {
+                                activeRequest = AssetRequest.fromFirestore(
+                                  reqSnapshot.docs.first,
+                                );
+                              }
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AssetDetailPage(
+                                    asset: asset,
+                                    req: activeRequest,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -128,6 +147,7 @@ class AdminActivityPage extends StatelessWidget {
           ],
         ),
       ),
+
       bottomNavigationBar: const FooterNav(),
     );
   }
