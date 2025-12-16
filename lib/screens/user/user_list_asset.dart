@@ -36,19 +36,33 @@ class _ListAssetPageState extends State<ListAssetPage> {
     "Sold Out",
   ];
 
-  // ✅ Map categories to images
+  // ✅ Map brand/asset names to images
   final Map<String, String> assetImageMap = {
-    "dell": "assets/images/dell.jpg",
-    "extension": "assets/images/extension.png",
-    "hdmi": "assets/images/hdmi.png", // you can also fallback to hdmi.jpg
-    "laptop": "assets/images/dell.jpg",
-    "laptop charger": "assets/images/laptop_charger.png",
-    "usb": "assets/images/usb.png",
-    "pendrive": "assets/images/usb.png",
-    "rca": "assets/images/rca.png",
+    'Laminator': 'assets/images/laminator.png',
+    'Apacer': 'assets/images/apacer.png',
+    'Maxell': 'assets/images/maxell.jpg',
+    'Acer': 'assets/images/acer.png',
+    'TV Mount Bracket': 'assets/images/tv mount bracket.jpg',
+    'Sandisk': 'assets/images/sandisk.jpg',
+    'Cable': 'assets/images/cable.png',
+    'Keelat': 'assets/images/keelat.jpg',
+    'Cordless Blower': 'assets/images/cordless blower.jpg',
+    'Portable Voice Amplifier': 'assets/images/portable voice amplifier.jpg',
+    'HDMI': 'assets/images/hdmi.jpg',
+    'VGA': 'assets/images/VGA.jpg',
+    'UGreen Adapter': 'assets/images/ugreen adapter.jpg',
+    'Microphone Stand': 'assets/images/mic stand.png',
+    'RASPBERRY PI 4B': 'assets/images/RASPBERRY PI 4B.jpg',
+    'HyperX': 'assets/images/hyperx.jpg',
+    'dell': 'assets/images/dell.jpg',
+    'extension': 'assets/images/extension.png',
+    'hdmi': 'assets/images/hdmi.jpg',
+    'laptop': 'assets/images/dell.jpg',
+    'laptop charger': 'assets/images/laptop_charger.png',
+    'usb': 'assets/images/usb.png',
+    'pendrive': 'assets/images/usb.png',
+    'rca': 'assets/images/rca.png',
   };
-
-  final String defaultAssetImage = "assets/images/default.png";
 
   List<String> get _categories => ["All", ...assetCategories];
 
@@ -298,16 +312,38 @@ class _ListAssetPageState extends State<ListAssetPage> {
     );
   }
 
-  // ✅ Use category → image mapping
   Widget _assetImage(Asset asset) {
     final name = asset.name.toLowerCase();
 
-    String imagePath = defaultAssetImage;
+    // Look for matching brand in assetImageMap
+    String? imagePath;
     assetImageMap.forEach((keyword, path) {
-      if (name.contains(keyword)) {
+      if (name.contains(keyword.toLowerCase())) {
         imagePath = path;
       }
     });
+
+    // If no match in map, try asset.imageUrl as fallback
+    if (imagePath == null || imagePath!.isEmpty) {
+      imagePath = asset.imageUrl;
+    }
+
+    // If still no image, show icon
+    if (imagePath == null || imagePath!.isEmpty) {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Color(0xFFEFF9F9),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.image_not_supported,
+          color: Color.fromARGB(255, 255, 255, 255),
+          size: 40,
+        ),
+      );
+    }
 
     return Container(
       width: 80,
@@ -316,16 +352,15 @@ class _ListAssetPageState extends State<ListAssetPage> {
         color: Color(0xFFEFF9F9),
         shape: BoxShape.circle,
       ),
-      child: Center(
+      child: ClipOval(
         child: Image.asset(
-          imagePath,
-          width: 60,
-          height: 60,
+          imagePath!,
+          fit: BoxFit.contain,
           errorBuilder: (_, __, ___) {
             return const Icon(
               Icons.devices_other,
-              size: 40,
               color: Color(0xFF00A7A7),
+              size: 40,
             );
           },
         ),

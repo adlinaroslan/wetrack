@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 // Assuming these imports lead to your project files:
 import '../../models/asset_model.dart';
 import '../../services/firestore_service.dart';
+import 'package:wetrack/services/asset_image_helper.dart';
 import 'package:wetrack/services/chat_list_page.dart';
 import 'package:wetrack/screens/user/logout_page.dart';
 import 'user_notification.dart';
@@ -248,15 +249,8 @@ class _AssetListItem extends StatelessWidget {
 
   // Helper to determine image path (Placeholder/Simple Logic)
   String _getImagePath(String assetName) {
-    final name = assetName.toLowerCase();
-    if (name.contains('hdmi')) return 'assets/images/hdmi.jpg';
-    if (name.contains('usb') || name.contains('pendrive'))
-      return 'assets/images/usb.png';
-    if (name.contains('projector')) return 'assets/images/projector.png';
-    if (name.contains('laptop')) return 'assets/images/dell.jpg';
-    if (name.contains('extension') || name.contains('charger'))
-      return 'assets/images/extension.png';
-    return 'assets/images/default.png';
+    final path = getAssetImagePath(assetName);
+    return path.isNotEmpty ? path : '';
   }
 
   @override

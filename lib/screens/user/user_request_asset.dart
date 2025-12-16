@@ -7,6 +7,7 @@ import 'package:wetrack/screens/user/user_homepage.dart';
 import 'package:wetrack/screens/user/user_notification.dart';
 import 'package:wetrack/screens/user/user_profile_page.dart';
 import 'package:wetrack/services/chat_list_page.dart';
+import 'package:wetrack/services/asset_image_helper.dart';
 
 class UserRequestAssetPage extends StatefulWidget {
   final Asset asset; // Asset object already contains all details
@@ -172,7 +173,8 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the icon based on the asset category or use a default
+    // Determine image path (brand-based) or fallback to category icon
+    final imagePath = getAssetImagePath(widget.asset.name);
     final assetIcon = _getCategoryIcon(widget.asset.category);
 
     return Scaffold(
@@ -242,9 +244,9 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 🔹 Asset Icon and Name Section
+            // 🔹 Asset Image and Name Section
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFFEFF9F9),
                 shape: BoxShape.circle,
@@ -257,11 +259,22 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
                   ),
                 ],
               ),
-              child: Icon(
-                assetIcon, // Use dynamic icon
-                color: const Color(0xFF004C5C),
-                size: 50,
-              ),
+              child: imagePath.isNotEmpty
+                  ? ClipOval(
+                      child: Image.asset(
+                        imagePath,
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(assetIcon,
+                            size: 50, color: const Color(0xFF004C5C)),
+                      ),
+                    )
+                  : Icon(
+                      assetIcon, // Use dynamic icon if no image matched
+                      color: const Color(0xFF004C5C),
+                      size: 50,
+                    ),
             ),
             const SizedBox(height: 16),
             Text(

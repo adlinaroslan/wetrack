@@ -137,7 +137,13 @@ class _UserReturnAssetDetailsPageState
             backgroundColor: Colors.white,
             // Ensure the image path is correct, or use a placeholder icon
             child: widget.imagePath.isNotEmpty
-                ? Image.asset(widget.imagePath, width: 80, height: 80)
+                ? Image.asset(widget.imagePath,
+                    width: 80,
+                    height: 80,
+                    errorBuilder: (_, __, ___) => const Icon(
+                        Icons.devices_other,
+                        color: primaryTeal,
+                        size: 80))
                 : const Icon(Icons.devices_other, color: primaryTeal, size: 80),
           ),
         ),

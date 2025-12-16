@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../models/asset_model.dart';
 import '../../services/firestore_service.dart';
 import 'package:wetrack/services/chat_list_page.dart';
+import 'package:wetrack/services/asset_image_helper.dart';
 import 'package:wetrack/screens/user/logout_page.dart';
 import 'user_notification.dart';
 import 'user_profile_page.dart';
@@ -240,7 +241,7 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
                   category: asset.category,
                   location: asset.location,
                   status: asset.status,
-                  imagePath: _getImagePath(asset.name),
+                  imagePath: getAssetImagePath(asset.name),
                 ),
               ),
             );
@@ -254,16 +255,25 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
                   backgroundColor: const Color(0xFFEFFBFA),
                   radius: 30,
                   child: ClipOval(
-                    child: Image.asset(
-                      _getImagePath(asset.name),
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.devices_other,
-                        color: Color(0xFF00A7A7),
-                      ),
-                    ),
+                    child: Builder(builder: (context) {
+                      final path = getAssetImagePath(asset.name);
+                      if (path.isEmpty) {
+                        return const Icon(
+                          Icons.devices_other,
+                          color: Color(0xFF00A7A7),
+                        );
+                      }
+                      return Image.asset(
+                        path,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.devices_other,
+                          color: Color(0xFF00A7A7),
+                        ),
+                      );
+                    }),
                   ),
                 ),
                 const SizedBox(width: 15),
@@ -322,14 +332,6 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
   }
 
   String _getImagePath(String assetName) {
-    final name = assetName.toLowerCase();
-    if (name.contains('hdmi')) return 'assets/images/hdmi.jpg';
-    if (name.contains('usb') || name.contains('pendrive'))
-      return 'assets/images/usb.png';
-    if (name.contains('projector')) return 'assets/images/projector.png';
-    if (name.contains('laptop')) return 'assets/images/dell.jpg';
-    if (name.contains('extension') || name.contains('charger'))
-      return 'assets/images/extension.png';
-    return 'assets/images/default.png';
+    return getAssetImagePath(assetName);
   }
 }

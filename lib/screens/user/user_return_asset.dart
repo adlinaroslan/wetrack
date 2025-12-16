@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:wetrack/models/asset_model.dart';
 import 'user_return_asset_details.dart'; // Ensure this import is correct
+import 'package:wetrack/services/asset_image_helper.dart';
 
 class UserReturnAssetPage extends StatefulWidget {
   const UserReturnAssetPage({super.key});
@@ -79,15 +80,8 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
   }
 
   String _getImagePath(String assetName) {
-    final name = assetName.toLowerCase();
-    if (name.contains('hdmi')) return 'assets/images/hdmi.jpg';
-    if (name.contains('usb') || name.contains('pendrive'))
-      return 'assets/images/usb.png';
-    if (name.contains('projector')) return 'assets/images/projector.png';
-    if (name.contains('laptop')) return 'assets/images/dell.jpg';
-    if (name.contains('extension') || name.contains('charger'))
-      return 'assets/images/extension.png';
-    return 'assets/images/default.png';
+    final path = getAssetImagePath(assetName);
+    return path.isNotEmpty ? path : '';
   }
 
   @override
@@ -250,6 +244,7 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
     final dueStr = asset.dueDateTime != null
         ? DateFormat('dd MMM yyyy').format(asset.dueDateTime!)
         : 'N/A';
+    final imagePath = _getImagePath(asset.name);
 
     return GestureDetector(
       // MODIFIED: Tapping the card now goes to the details page.
@@ -297,12 +292,14 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
                   color: Colors.grey.shade100,
                   width: 50,
                   height: 50,
-                  child: Image.asset(
-                    _getImagePath(asset.name),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.devices_other),
-                  ),
+                  child: imagePath.isNotEmpty
+                      ? Image.asset(
+                          imagePath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.devices_other),
+                        )
+                      : const Icon(Icons.devices_other),
                 ),
               ),
               const SizedBox(width: 15),

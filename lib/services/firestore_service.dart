@@ -61,10 +61,10 @@ class FirestoreService {
 
   // ---------------------- ASSET STREAMS (User History) ----------------------
 
-  /// Fetches a stream of assets that are currently marked as 'Available' in the database.
+  /// Fetches a stream of assets that are currently marked as 'In Stock' in the database.
   Stream<List<Asset>> getAvailableAssets() {
     return assetsRef
-        .where('status', isEqualTo: 'Available')
+        .where('status', isEqualTo: 'In Stock')
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
