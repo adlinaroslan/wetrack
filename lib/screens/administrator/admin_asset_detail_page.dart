@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../models/asset_model.dart';
+import '../../models/request_model.dart';
 import 'qr_viewer_page.dart';
 
 class AssetDetailPage extends StatelessWidget {
   final Asset asset;
-  const AssetDetailPage({super.key, required this.asset});
+  final AssetRequest? req;
+
+  const AssetDetailPage({
+    super.key,
+    required this.asset,
+    this.req,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final bool isBorrowed = req != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Asset Details"),
+        title: const Text("Asset Tracking Details"),
         elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -22,53 +31,52 @@ class AssetDetailPage extends StatelessWidget {
           ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Asset Information",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            _sectionTitle("Asset Information"),
+            _infoCard([
+              _infoRow("Asset ID", asset.id),
+              _infoRow("Name", asset.name),
+              _infoRow("Brand", asset.brand),
+              _infoRow("Category", asset.category),
+              _infoRow("Serial Number", asset.serialNumber),
+            ]),
+
             const SizedBox(height: 16),
 
-            Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              elevation: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("General Info",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
-                    infoRow("Asset ID", asset.id),
-                    infoRow("Name", asset.name),
-                    infoRow("Brand", asset.brand),
-                    infoRow("Category", asset.category),
-                    infoRow("Serial Number", asset.serialNumber),
-                  ],
-                ),
+            _sectionTitle("Tracking Information"),
+            _infoCard([
+              _infoRow(
+                "Status",
+                isBorrowed ? "Borrowed" : "Available",
+                valueColor: isBorrowed ? Colors.red : Colors.green,
               ),
-            ),
-            const SizedBox(height: 18),
+              _infoRow("Current Location", asset.location),
+              _infoRow(
+                "User Name",
+                isBorrowed ? req!.userName : "-",
+              ),
+            ]),
+
+            const SizedBox(height: 24),
 
             Center(
               child: ElevatedButton.icon(
+                icon: const Icon(Icons.qr_code),
+                label: const Text("View QR Code"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00A7A7),
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                icon: const Icon(Icons.qr_code),
-                label: const Text("Generate QR Code"),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -85,22 +93,49 @@ class AssetDetailPage extends StatelessWidget {
     );
   }
 
-  Widget infoRow(String label, String? value, {Color? valueColor}) {
+  Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _infoCard(List<Widget> children) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(children: children),
+      ),
+    );
+  }
+
+  Widget _infoRow(
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Expanded(
             flex: 2,
             child: Text(
               "$label:",
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           Expanded(
             flex: 3,
             child: Text(
-              value ?? '-',
+              value,
               style: TextStyle(
                 color: valueColor ?? Colors.black87,
                 fontWeight:

@@ -24,6 +24,9 @@ dependencies:
   fl_chart: ^1.1.1
   qr_flutter: ^4.1.0
   flutter_launcher_icons: "^0.14.4"
+  pdf: ^3.10.8
+  printing: ^5.13.1
+
 
 flutter_launcher_icons:
   android: true
