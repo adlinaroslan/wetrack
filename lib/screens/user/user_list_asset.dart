@@ -20,7 +20,6 @@ class _ListAssetPageState extends State<ListAssetPage> {
 
   String _selectedCategory = 'All';
 
-  // ✅ Centralized categories & statuses (same as Admin)
   final List<String> assetCategories = [
     "Monitor",
     "Desktop",
@@ -29,39 +28,37 @@ class _ListAssetPageState extends State<ListAssetPage> {
     "IT-Accessories",
   ];
 
-  final List<String> assetStatuses = [
-    "In Stock",
-    "In Use",
-    "Re-Purchased Needed",
-    "Sold Out",
-  ];
-
-  // ✅ Map brand/asset names to images
+  // FIXED: Ordered by Specificity (Longer/Specific names first)
+  // Removed duplicates and ensured consistent lowercase keys for matching logic
   final Map<String, String> assetImageMap = {
-    'Laminator': 'assets/images/laminator.png',
-    'Apacer': 'assets/images/apacer.png',
-    'Maxell': 'assets/images/maxell.jpg',
-    'Acer': 'assets/images/acer.png',
-    'TV Mount Bracket': 'assets/images/tv mount bracket.jpg',
-    'Sandisk': 'assets/images/sandisk.jpg',
-    'Cable': 'assets/images/cable.png',
-    'Keelat': 'assets/images/keelat.jpg',
-    'Cordless Blower': 'assets/images/cordless blower.jpg',
-    'Portable Voice Amplifier': 'assets/images/portable voice amplifier.jpg',
-    'HDMI': 'assets/images/hdmi.jpg',
-    'VGA': 'assets/images/VGA.jpg',
-    'UGreen Adapter': 'assets/images/ugreen adapter.jpg',
-    'Microphone Stand': 'assets/images/mic stand.png',
-    'RASPBERRY PI 4B': 'assets/images/RASPBERRY PI 4B.jpg',
-    'HyperX': 'assets/images/hyperx.jpg',
-    'dell': 'assets/images/dell.jpg',
-    'extension': 'assets/images/extension.png',
-    'hdmi': 'assets/images/hdmi.jpg',
-    'laptop': 'assets/images/dell.jpg',
+    // Specific items first
     'laptop charger': 'assets/images/laptop_charger.png',
+    'tv mount bracket': 'assets/images/tv mount bracket.jpg',
+    'cordless blower': 'assets/images/cordless blower.jpg',
+    'portable voice amplifier': 'assets/images/portable voice amplifier.jpg',
+    'ugreen adapter': 'assets/images/ugreen adapter.jpg',
+    'microphone stand': 'assets/images/mic stand.png',
+    'raspberry pi': 'assets/images/RASPBERRY PI 4B.jpg',
+
+    // Brand names / Generic items second
+    'laminator': 'assets/images/laminator.png',
+    'apacer': 'assets/images/apacer.png',
+    'maxell': 'assets/images/maxell.jpg',
+    'acer': 'assets/images/acer.png',
+    'sandisk': 'assets/images/sandisk.jpg',
+    'keelat': 'assets/images/keelat.jpg',
+    'hyperx': 'assets/images/hyperx.jpg',
+    'dell': 'assets/images/dell.jpg',
+    'laptop': 'assets/images/dell.jpg', // Generic laptop fallback
+
+    // Cables and accessories
+    'hdmi': 'assets/images/hdmi.jpg',
+    'vga': 'assets/images/VGA.jpg',
+    'rca': 'assets/images/rca.png',
     'usb': 'assets/images/usb.png',
     'pendrive': 'assets/images/usb.png',
-    'rca': 'assets/images/rca.png',
+    'extension': 'assets/images/extension.png',
+    'cable': 'assets/images/cable.png',
   };
 
   List<String> get _categories => ["All", ...assetCategories];
@@ -312,59 +309,94 @@ class _ListAssetPageState extends State<ListAssetPage> {
     );
   }
 
+  // UPDATED: This widget now ensures BoxFit.contain is used correctly
   Widget _assetImage(Asset asset) {
     final name = asset.name.toLowerCase();
-
-    // Look for matching brand in assetImageMap
     String? imagePath;
-    assetImageMap.forEach((keyword, path) {
-      if (name.contains(keyword.toLowerCase())) {
-        imagePath = path;
-      }
-    });
 
-    // If no match in map, try asset.imageUrl as fallback
-    if (imagePath == null || imagePath!.isEmpty) {
+    // 1. Iterate through map entries (Specific -> Generic).
+    for (var entry in assetImageMap.entries) {
+      if (name.contains(entry.key.toLowerCase())) {
+        imagePath = entry.value;
+        break; // STOP searching once we find a match
+      }
+    }
+
+    // Fallback to asset.imageUrl if no local match
+    if (imagePath == null || imagePath.isEmpty) {
       imagePath = asset.imageUrl;
     }
 
-    // If still no image, show icon
-    if (imagePath == null || imagePath!.isEmpty) {
-      return Container(
-        width: 80,
-        height: 80,
-        decoration: const BoxDecoration(
-          color: Color(0xFFEFF9F9),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.image_not_supported,
-          color: Color.fromARGB(255, 255, 255, 255),
-          size: 40,
-        ),
-      );
+    // If still no image, show placeholder icon
+    if (imagePath == null || imagePath.isEmpty) {
+      return _buildImagePlaceholder();
     }
 
+    bool isNetworkImage = imagePath.startsWith('http');
+
+    // **CORE UPDATE: Container/ClipOval setup for perfect circular fit**
     return Container(
       width: 80,
       height: 80,
+      // Light teal background for the circle
       decoration: const BoxDecoration(
         color: Color(0xFFEFF9F9),
         shape: BoxShape.circle,
       ),
+      padding: const EdgeInsets.all(5), // Add some padding inside the circle
       child: ClipOval(
-        child: Image.asset(
-          imagePath!,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) {
-            return const Icon(
-              Icons.devices_other,
-              color: Color(0xFF00A7A7),
-              size: 40,
-            );
-          },
-        ),
+        child: isNetworkImage
+            ? Image.network(
+                imagePath,
+                fit: BoxFit.contain, // ✅ Ensures the whole image is visible
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF00A7A7)),
+                    ),
+                  );
+                },
+                errorBuilder: (_, __, ___) => _buildErrorIcon(),
+              )
+            : Image.asset(
+                imagePath,
+                fit: BoxFit.contain, // ✅ Ensures the whole image is visible
+                errorBuilder: (_, __, ___) => _buildErrorIcon(),
+              ),
       ),
+    );
+  }
+
+  // Fixed Placeholder: It was showing an image_not_supported icon with a white color on a white circle, making it invisible.
+  // Now it uses the generic device icon with the primary teal color.
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: const BoxDecoration(
+        color: Color(0xFFEFF9F9), // Use the light teal background
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.devices_other,
+        color: Color(0xFF00A7A7),
+        size: 40,
+      ),
+    );
+  }
+
+  // Icon used for error/fallback in _assetImage
+  Widget _buildErrorIcon() {
+    return const Icon(
+      Icons.devices_other,
+      color: Color(0xFF00A7A7),
+      size: 40,
     );
   }
 }

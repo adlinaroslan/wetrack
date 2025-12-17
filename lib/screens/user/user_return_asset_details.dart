@@ -126,39 +126,65 @@ class _UserReturnAssetDetailsPageState
   Widget _buildAssetHeader() {
     return Column(
       children: [
+        // 🌟 UPDATED IMAGE CONTAINER 🌟
         Container(
-          padding: const EdgeInsets.all(16),
+          width: 130, // Defined width for consistency
+          height: 130, // Defined height
+          padding: const EdgeInsets.all(
+              15), // Padding ensures image doesn't touch edges
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(51),
-            borderRadius: BorderRadius.circular(25),
+            color: Colors.white, // Solid white background
+            shape: BoxShape.circle, // Circular shape
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, 5),
+              ),
+            ],
           ),
-          child: CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.white,
-            // Ensure the image path is correct, or use a placeholder icon
+          child: ClipOval(
             child: widget.imagePath.isNotEmpty
-                ? Image.asset(widget.imagePath,
-                    width: 80,
-                    height: 80,
+                ? Image.asset(
+                    widget.imagePath,
+                    fit: BoxFit
+                        .contain, // ✅ Ensures the image suits the container
                     errorBuilder: (_, __, ___) => const Icon(
-                        Icons.devices_other,
-                        color: primaryTeal,
-                        size: 80))
-                : const Icon(Icons.devices_other, color: primaryTeal, size: 80),
+                      Icons.devices_other,
+                      color: primaryTeal,
+                      size: 50,
+                    ),
+                  )
+                : const Icon(
+                    Icons.devices_other,
+                    color: primaryTeal,
+                    size: 50,
+                  ),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 16),
         Text(
           widget.assetName,
+          textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 24,
             fontWeight: FontWeight.w900,
+            shadows: [
+              Shadow(
+                offset: Offset(0, 1),
+                blurRadius: 3.0,
+                color: Colors.black26,
+              ),
+            ],
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           widget.assetId,
-          style: const TextStyle(color: Colors.white70, fontSize: 16),
+          style: const TextStyle(
+              color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w500),
         ),
       ],
     );

@@ -7,7 +7,6 @@ import 'package:wetrack/screens/user/user_homepage.dart';
 import 'package:wetrack/screens/user/user_notification.dart';
 import 'package:wetrack/screens/user/user_profile_page.dart';
 import 'package:wetrack/services/chat_list_page.dart';
-import 'package:wetrack/services/asset_image_helper.dart';
 
 class UserRequestAssetPage extends StatefulWidget {
   final Asset asset; // Asset object already contains all details
@@ -35,6 +34,38 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
     "2:00 PM",
     "03:00 PM"
   ];
+
+  // ✅ 1. Define the Image Map locally to ensure specific matching works
+  final Map<String, String> _assetImageMap = {
+    // Specific items first
+    'laptop charger': 'assets/images/laptop_charger.png',
+    'tv mount bracket': 'assets/images/tv mount bracket.jpg',
+    'cordless blower': 'assets/images/cordless blower.jpg',
+    'portable voice amplifier': 'assets/images/portable voice amplifier.jpg',
+    'ugreen adapter': 'assets/images/ugreen adapter.jpg',
+    'microphone stand': 'assets/images/mic stand.png',
+    'raspberry pi': 'assets/images/RASPBERRY PI 4B.jpg',
+
+    // Brand names / Generic items second
+    'laminator': 'assets/images/laminator.png',
+    'apacer': 'assets/images/apacer.png',
+    'maxell': 'assets/images/maxell.jpg',
+    'acer': 'assets/images/acer.png',
+    'sandisk': 'assets/images/sandisk.jpg',
+    'keelat': 'assets/images/keelat.jpg',
+    'hyperx': 'assets/images/hyperx.jpg',
+    'dell': 'assets/images/dell.jpg',
+    'laptop': 'assets/images/dell.jpg', // Generic laptop fallback
+
+    // Cables and accessories
+    'hdmi': 'assets/images/hdmi.jpg',
+    'vga': 'assets/images/VGA.jpg',
+    'rca': 'assets/images/rca.png',
+    'usb': 'assets/images/usb.png',
+    'pendrive': 'assets/images/usb.png',
+    'extension': 'assets/images/extension.png',
+    'cable': 'assets/images/cable.png',
+  };
 
   @override
   void dispose() {
@@ -107,8 +138,7 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
 
     try {
       await _firestoreService.requestAsset(
-        assetId: widget.asset
-            .docId, // Use docId for Firestore updates if that's what your service expects
+        assetId: widget.asset.docId,
         assetName: widget.asset.name,
         requiredDate: requiredDateTime,
         userId: user.uid,
@@ -173,10 +203,6 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine image path (brand-based) or fallback to category icon
-    final imagePath = getAssetImagePath(widget.asset.name);
-    final assetIcon = _getCategoryIcon(widget.asset.category);
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -248,7 +274,8 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF9F9),
+                // ✅ CHANGED: Background is now White
+                color: Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFF00A7A7), width: 1.5),
                 boxShadow: const [
@@ -259,22 +286,8 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
                   ),
                 ],
               ),
-              child: imagePath.isNotEmpty
-                  ? ClipOval(
-                      child: Image.asset(
-                        imagePath,
-                        width: 90,
-                        height: 90,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(assetIcon,
-                            size: 50, color: const Color(0xFF004C5C)),
-                      ),
-                    )
-                  : Icon(
-                      assetIcon, // Use dynamic icon if no image matched
-                      color: const Color(0xFF004C5C),
-                      size: 50,
-                    ),
+              // ✅ FIXED: Using the local _assetImage helper
+              child: _buildAssetImage(),
             ),
             const SizedBox(height: 16),
             Text(
@@ -288,8 +301,7 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(
-                    0xFFF0F8FF), // Light blue background for emphasis
+                color: const Color(0xFFF0F8FF),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFF69D9D9), width: 1),
               ),
@@ -322,7 +334,6 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
               ),
             ),
             const SizedBox(height: 8),
-            // ... (Date Picker GestureDetector remains the same)
             GestureDetector(
               onTap: () => _selectDate(context),
               child: Container(
@@ -461,7 +472,62 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
     );
   }
 
-  // Helper to choose a relevant icon based on category (optional but good practice)
+  // ✅ 2. Logic to Find the Best Image
+  Widget _buildAssetImage() {
+    final name = widget.asset.name.toLowerCase();
+    String? imagePath;
+
+    // Check Map first (Loop and Break logic)
+    for (var entry in _assetImageMap.entries) {
+      if (name.contains(entry.key.toLowerCase())) {
+        imagePath = entry.value;
+        break; // Match found, stop searching
+      }
+    }
+
+    // Fallback to asset property
+    if (imagePath == null || imagePath.isEmpty) {
+      imagePath = widget.asset.imageUrl;
+    }
+
+    // If still empty, show Icon
+    if (imagePath == null || imagePath.isEmpty) {
+      return Icon(
+        _getCategoryIcon(widget.asset.category),
+        color: const Color(0xFF004C5C),
+        size: 50,
+      );
+    }
+
+    bool isNetworkImage = imagePath.startsWith('http');
+
+    return ClipOval(
+      child: isNetworkImage
+          ? Image.network(
+              imagePath,
+              width: 90,
+              height: 90,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Icon(
+                _getCategoryIcon(widget.asset.category),
+                color: const Color(0xFF004C5C),
+                size: 50,
+              ),
+            )
+          : Image.asset(
+              imagePath,
+              width: 90,
+              height: 90,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Icon(
+                _getCategoryIcon(widget.asset.category),
+                color: const Color(0xFF004C5C),
+                size: 50,
+              ),
+            ),
+    );
+  }
+
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
       case 'laptop':
@@ -472,6 +538,8 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
         return Icons.construction;
       case 'furniture':
         return Icons.chair;
+      case 'desktop':
+        return Icons.computer;
       default:
         return Icons.devices_other;
     }
