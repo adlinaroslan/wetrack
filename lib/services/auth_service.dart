@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// A service class to handle all Firebase Authentication operations.
 ///
@@ -6,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 /// keeping the UI clean and focusing on presentation.
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   /// Attempts to sign in a user with email and password.
   /// Returns "success" on success, or the error message string on failure.
@@ -43,7 +45,43 @@ class AuthService {
     }
   }
 
-  // You can add more methods here, like:
-  // Future<void> signOut() => _firebaseAuth.signOut();
+  /// Sign in with Google.
+  /// Returns "success" on success, or the error message string on failure.
+  Future<String> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        return "Google sign in cancelled";
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await _firebaseAuth.signInWithCredential(credential);
+      return "success";
+    } on FirebaseAuthException catch (e) {
+      // Log full exception for debugging and return detailed text
+      // so the UI can show the precise error while you debug.
+      // Remove or simplify these messages for production.
+      // ignore: avoid_print
+      print('Google sign-in FirebaseAuthException: ${e.code} ${e.message}');
+      return e.message ?? e.toString();
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('Google sign-in error: $e\n$st');
+      return e.toString();
+    }
+  }
+
+  /// Sign out the user.
+  Future<void> signOut() async {
+    await _firebaseAuth.signOut();
+    await _googleSignIn.signOut();
+  }
   // Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 }

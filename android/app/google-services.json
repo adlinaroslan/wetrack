@@ -2,8 +2,7 @@
   "project_info": {
     "project_number": "421690155245",
     "project_id": "wetrack-fc09f",
-   "storage_bucket": "wetrack-fc09f.appspot.com"
-
+    "storage_bucket": "wetrack-fc09f.firebasestorage.app"
   },
   "client": [
     {
@@ -13,7 +12,20 @@
           "package_name": "com.example.wetrack"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "421690155245-qkkb37v7edjr44f07tv556u60gi6hgpu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.wetrack",
+            "certificate_hash": "5ee90339cf0553766f42e6476f6d7107572ffb33"
+          }
+        },
+        {
+          "client_id": "421690155245-1r8g30kdeeq8c6hfau39b33s83gulov7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDh-BVFVE18Ep7TYUVWh2izOxX_3TxvHe4"
@@ -21,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "421690155245-1r8g30kdeeq8c6hfau39b33s83gulov7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "421690155245-3lsf631hdc9b63rmqgv84ldpcr9aoi1v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.wetrack"
+              }
+            }
+          ]
         }
       }
     }

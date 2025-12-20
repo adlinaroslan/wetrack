@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 import 'user/user_homepage.dart';
 import 'signup_page.dart';
 import 'technician/technician_home.dart';
@@ -19,6 +20,7 @@ class _SignInPageState extends State<SignInPage> {
   String? errorText;
   bool isLoading = false;
   bool _passwordObscured = true;
+  final authService = AuthService();
 
   Future<void> handleLogin() async {
     final email = emailController.text.trim();
@@ -71,6 +73,51 @@ class _SignInPageState extends State<SignInPage> {
       if (mounted) {
         setState(() => isLoading = false);
       }
+    }
+  }
+
+  Future<void> handleGoogleSignIn() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorText = null;
+      });
+      final result = await authService.signInWithGoogle();
+
+      if (!mounted) return;
+      if (result != "success") {
+        setState(() {
+          errorText = result;
+        });
+        return;
+      }
+
+      final role = widget.role.toLowerCase();
+      if (role == 'user') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      } else if (role == 'technician') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const TechnicianHomePage()),
+        );
+      } else if (role == 'administrator' || role == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminHomePage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => errorText = 'Google sign in failed');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -189,6 +236,57 @@ class _SignInPageState extends State<SignInPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        Row(
+                          children: const [
+                            Expanded(child: Divider(color: Colors.grey)),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Text('OR',
+                                  style: TextStyle(color: Colors.grey)),
+                            ),
+                            Expanded(child: Divider(color: Colors.grey)),
+                          ],
+                        ),
+                        // ... existing code (after the "OR" divider) ...
+                        const SizedBox(height: 12),
+
+// --- CIRCULAR GOOGLE ICON ONLY ---
+                        Center(
+                          child: isLoading
+                              ? const CircularProgressIndicator()
+                              : InkWell(
+                                  onTap: handleGoogleSignIn,
+                                  borderRadius: BorderRadius.circular(30),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Image.asset(
+                                      'assets/images/google.png',
+                                      height: 30,
+                                      width: 30,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(
+                                        Icons.account_circle,
+                                        color: Colors.red,
+                                        size: 30,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 12),
+// ... existing code (before the "Don't have an account?" text) ...
                         TextButton(
                           onPressed: () => Navigator.push(
                             context,
