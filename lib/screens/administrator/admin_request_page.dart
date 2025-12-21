@@ -23,20 +23,30 @@ StatusColor getStatusColor(String status) {
   switch (status.toUpperCase()) {
     case 'APPROVED':
       return const StatusColor(
-          background: Color(0xFFDFF5E1), text: Colors.green);
+        background: Color(0xFFDFF5E1),
+        text: Colors.green,
+      );
     case 'PENDING':
     case 'PENDING_REQUEST':
       return const StatusColor(
-          background: Color(0xFFFFF8E1), text: Colors.amber);
+        background: Color(0xFFFFF8E1),
+        text: Colors.amber,
+      );
     case 'DECLINED':
       return const StatusColor(
-          background: Color(0xFFFDECEA), text: Colors.red);
+        background: Color(0xFFFDECEA),
+        text: Colors.red,
+      );
     case 'COMPLETED':
       return const StatusColor(
-          background: Color(0xFFE8F5E9), text: Colors.greenAccent);
+        background: Color(0xFFE8F5E9),
+        text: Colors.greenAccent,
+      );
     default:
       return const StatusColor(
-          background: Colors.grey, text: Colors.black54);
+        background: Colors.grey,
+        text: Colors.black54,
+      );
   }
 }
 
@@ -65,13 +75,15 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
+            // Status indicator bar
             Container(
               width: 8,
               height: 110,
               decoration: BoxDecoration(
                 color: statusColors.background.withOpacity(0.7),
-                borderRadius:
-                    const BorderRadius.horizontal(left: Radius.circular(10)),
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(10),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -85,11 +97,17 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 6),
-                  Text("Asset ID : ${r.assetId}",
-                      style: const TextStyle(fontSize: 12)),
+
+                  Text(
+                    "Asset ID : ${r.assetId}",
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   const SizedBox(height: 6),
-                  Text("User : ${r.userName}",
-                      style: const TextStyle(fontSize: 12)),
+
+                  Text(
+                    "User : ${r.userName}",
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   const SizedBox(height: 10),
 
                   Row(
@@ -100,6 +118,7 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                         child: const Text("View Detail"),
                       ),
 
+                      // Action buttons only for pending requests
                       if (r.status.toUpperCase() == 'PENDING' ||
                           r.status.toUpperCase() == 'PENDING_REQUEST')
                         Row(
@@ -140,7 +159,9 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                       else
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColors.background,
                             borderRadius: BorderRadius.circular(8),
@@ -152,9 +173,9 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        )
+                        ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -178,8 +199,11 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
 
         if (list.isEmpty) {
           return const Center(
-              child: Text("No requests",
-                  style: TextStyle(color: Colors.black54)));
+            child: Text(
+              "No requests",
+              style: TextStyle(color: Colors.black54),
+            ),
+          );
         }
 
         return ListView.builder(
@@ -193,7 +217,7 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3, // 👈 THREE TABS
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -210,18 +234,25 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
           bottom: const TabBar(
             indicatorColor: Colors.white,
             indicatorWeight: 3,
-            labelColor: Colors.white,          // SELECTED TAB
-            unselectedLabelColor: Colors.white70, // UNSELECTED TAB
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             tabs: [
               Tab(text: "In Progress"),
               Tab(text: "Approved"),
+              Tab(text: "Declined"),
             ],
           ),
         ),
         body: TabBarView(
           children: [
+            // In Progress
             _requestList({'PENDING', 'PENDING_REQUEST'}),
+
+            // Approved
             _requestList({'APPROVED', 'COMPLETED'}),
+
+            // Declined
+            _requestList({'DECLINED'}),
           ],
         ),
       ),
