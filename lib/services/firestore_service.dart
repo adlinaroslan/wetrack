@@ -280,7 +280,7 @@ class FirestoreService {
       );
 
       if (currentStatus == 'PENDING_REQUEST') {
-        transaction.update(assetDoc, {'status': 'AVAILABLE'});
+        transaction.update(assetDoc, {'status': 'In Stock'});
       }
     });
 
@@ -338,9 +338,9 @@ class FirestoreService {
       final asset = snap.data();
       final borrowerId = asset?.borrowedByUserId ?? 'N/A';
 
-      // ✅ Update Asset Status back to AVAILABLE
+      // ✅ Update Asset Status back to In Stock
       transaction.update(assetDocRef, {
-        'status': 'AVAILABLE',
+        'status': 'In Stock',
         'borrowedByUserId': FieldValue.delete(),
         'dueDateTime': FieldValue.delete(),
         'location': 'Storage',

@@ -86,26 +86,17 @@ class _EditAssetPageState extends State<EditAssetPage> {
               const SizedBox(height: 10),
 
               _buildLabel("Status"),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration:
-                      const InputDecoration(border: InputBorder.none),
-                  items: statusOptions.map((status) {
-                    return DropdownMenuItem(
-                      value: status,
-                      child: Text(status),
-                    );
-                  }).toList(),
-                  onChanged: (value) =>
-                      setState(() => selectedStatus = value!),
-                ),
+              DropdownButtonFormField<String>(
+                value: selectedStatus,
+                decoration: _inputDecoration(),
+                items: statusOptions.map((status) {
+                  return DropdownMenuItem(
+                    value: status,
+                    child: Text(status),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => selectedStatus = value!),
               ),
 
               const SizedBox(height: 25),
@@ -132,14 +123,14 @@ class _EditAssetPageState extends State<EditAssetPage> {
   }
 
   // ======================================
-  // SAVE CHANGES
+  // SAVE CHANGES (FIXED)
   // ======================================
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
     await FirebaseFirestore.instance
         .collection("assets")
-        .doc(widget.asset.id)
+        .doc(widget.asset.docId) // ✅ IMPORTANT FIX
         .update({
       "name": nameController.text.trim(),
       "serialNumber": serialController.text.trim(),
@@ -156,7 +147,7 @@ class _EditAssetPageState extends State<EditAssetPage> {
       const SnackBar(content: Text("Asset updated successfully!")),
     );
 
-    Navigator.pop(context);
+    Navigator.pop(context, true); // ✅ notify previous page
   }
 
   // ======================================
@@ -175,16 +166,20 @@ class _EditAssetPageState extends State<EditAssetPage> {
   Widget _buildTextField(TextEditingController controller) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
+      decoration: _inputDecoration(),
       validator: (v) =>
           v == null || v.isEmpty ? "This field cannot be empty" : null,
+    );
+  }
+
+  InputDecoration _inputDecoration() {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
     );
   }
 }
