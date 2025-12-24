@@ -21,7 +21,16 @@ class _EditAssetPageState extends State<EditAssetPage> {
   late TextEditingController locationController;
   late TextEditingController imagePathController;
 
-  String selectedStatus = "AVAILABLE";
+  late String selectedStatus;
+
+  // ✅ Updated status options
+  final List<String> statusOptions = [
+    "In Stock",
+    "In Use",
+    "Re-Purchased Needed",
+    "Service Needed", 
+    "DISPOSED",
+  ];
 
   @override
   void initState() {
@@ -30,21 +39,36 @@ class _EditAssetPageState extends State<EditAssetPage> {
     nameController = TextEditingController(text: widget.asset.name);
     brandController = TextEditingController(text: widget.asset.brand);
     categoryController = TextEditingController(text: widget.asset.category);
-    serialController = TextEditingController(text: widget.asset.serialNumber);
-    locationController = TextEditingController(text: widget.asset.location);
-    imagePathController = TextEditingController(text: widget.asset.imageUrl);
+    serialController =
+        TextEditingController(text: widget.asset.serialNumber);
+    locationController =
+        TextEditingController(text: widget.asset.location);
+    imagePathController =
+        TextEditingController(text: widget.asset.imageUrl);
 
-    selectedStatus = widget.asset.status;
+    selectedStatus = statusOptions.contains(widget.asset.status)
+        ? widget.asset.status
+        : statusOptions.first;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text("Edit Asset: ${widget.asset.name}"),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF004C5C),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-
+      
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -52,71 +76,54 @@ class _EditAssetPageState extends State<EditAssetPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // --- NAME ---
               _buildLabel("Asset Name"),
               _buildTextField(nameController),
 
-              // --- SERIAL NUMBER ---
               _buildLabel("Serial Number"),
               _buildTextField(serialController),
 
-              // --- BRAND ---
               _buildLabel("Brand"),
               _buildTextField(brandController),
 
-              // --- CATEGORY ---
               _buildLabel("Category"),
               _buildTextField(categoryController),
 
-              // --- LOCATION ---
               _buildLabel("Location"),
               _buildTextField(locationController),
 
-              // --- IMAGE PATH ---
               _buildLabel("Image Path"),
               _buildTextField(imagePathController),
 
               const SizedBox(height: 10),
 
-              // --- STATUS DROPDOWN ---
               _buildLabel("Status"),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: const InputDecoration(border: InputBorder.none),
-                  items: const [
-                    DropdownMenuItem(value: "AVAILABLE", child: Text("AVAILABLE")),
-                    DropdownMenuItem(value: "BORROWED", child: Text("BORROWED")),
-                    DropdownMenuItem(value: "MAINTENANCE", child: Text("MAINTENANCE")),
-                    DropdownMenuItem(value: "DISPOSED", child: Text("DISPOSED")),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedStatus = value!;
-                    });
-                  },
-                ),
+              DropdownButtonFormField<String>(
+                value: selectedStatus,
+                decoration: _inputDecoration(),
+                items: statusOptions.map((status) {
+                  return DropdownMenuItem(
+                    value: status,
+                    child: Text(status),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => selectedStatus = value!),
               ),
 
               const SizedBox(height: 25),
 
-              // --- SAVE BUTTON ---
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _saveChanges,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.blue,
+                    backgroundColor: const Color(0xFF00A7A7),
                   ),
-                  child: const Text("Save Changes", style: TextStyle(fontSize: 16)),
+                  child: const Text(
+                    "Save Changes",
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -126,27 +133,24 @@ class _EditAssetPageState extends State<EditAssetPage> {
     );
   }
 
-
   // ======================================
-  // SAVE CHANGES TO FIRESTORE
+  // SAVE CHANGES
   // ======================================
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final updatedData = {
+    await FirebaseFirestore.instance
+        .collection("assets")
+        .doc(widget.asset.docId)
+        .update({
       "name": nameController.text.trim(),
       "serialNumber": serialController.text.trim(),
       "brand": brandController.text.trim(),
       "category": categoryController.text.trim(),
       "location": locationController.text.trim(),
-      "imagePath": imagePathController.text.trim(),
+      "imageUrl": imagePathController.text.trim(),
       "status": selectedStatus,
-    };
-
-    await FirebaseFirestore.instance
-        .collection("assets")
-        .doc(widget.asset.id)
-        .update(updatedData);
+    });
 
     if (!mounted) return;
 
@@ -154,22 +158,18 @@ class _EditAssetPageState extends State<EditAssetPage> {
       const SnackBar(content: Text("Asset updated successfully!")),
     );
 
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
-
   // ======================================
-  // REUSABLE WIDGETS
+  // HELPERS
   // ======================================
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6, top: 16),
       child: Text(
         text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        ),
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -177,17 +177,20 @@ class _EditAssetPageState extends State<EditAssetPage> {
   Widget _buildTextField(TextEditingController controller) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
+      decoration: _inputDecoration(),
+      validator: (v) =>
+          v == null || v.isEmpty ? "This field cannot be empty" : null,
+    );
+  }
+
+  InputDecoration _inputDecoration() {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
       ),
-      validator: (value) =>
-          value == null || value.isEmpty ? "This field cannot be empty" : null,
     );
   }
 }

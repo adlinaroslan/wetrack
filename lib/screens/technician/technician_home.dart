@@ -1,30 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../widgets/footer_nav.dart';
+import '../../services/chat_list_page.dart';
+
 import 'asset_list_page.dart';
 import 'technician_activity_page.dart';
 import 'technician_notification_page.dart';
 import 'technician_service_page.dart';
-import 'technician_profile_page.dart'; // <-- Import the profile page
-import '../../widgets/footer_nav.dart';
-import '../../services/chat_list_page.dart';
+import 'technician_profile_page.dart';
+import 'technician_report_page.dart';
 
-class TechnicianHomePage extends StatelessWidget {
+class TechnicianHomePage extends StatefulWidget {
   const TechnicianHomePage({super.key});
 
-  // Sample recent status data for the list at the bottom
-  List<Map<String, String>> get _recentServices => const [
-        {"id": "B230159", "type": "Laptop", "status": "In Progress"},
-        {"id": "RQE6138", "type": "Power Cable", "status": "In Progress"},
-        {"id": "A67495", "type": "Electronics", "status": "Fixed"},
-      ];
+  @override
+  State<TechnicianHomePage> createState() => _TechnicianHomePageState();
+}
 
+class _TechnicianHomePageState extends State<TechnicianHomePage> {
   Color _statusColor(String status) {
-    switch (status) {
-      case 'Fixed':
+    switch (status.toUpperCase()) {
+      case 'FIXED':
         return Colors.green;
-      case 'In Progress':
-        return Colors.amber;
-      default:
+      case 'IN_PROGRESS':
+        return Colors.orange;
+      case 'PENDING':
         return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -32,6 +36,8 @@ class TechnicianHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+
+      /// ---------------- APP BAR ----------------
       appBar: AppBar(
         elevation: 0,
         title: const Text(
@@ -48,95 +54,155 @@ class TechnicianHomePage extends StatelessWidget {
           ),
         ),
         actions: [
-          // Profile button
           IconButton(
             icon: const Icon(Icons.person, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const TechnicianProfilePage(),
-                ),
+                    builder: (_) => const TechnicianProfilePage()),
               );
             },
           ),
-          // Notification button
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const TechnicianNotificationPage(),
-                ),
+                    builder: (_) => const TechnicianNotificationPage()),
               );
             },
           ),
-          // Messages icon: open chat list (plain white icon)
           IconButton(
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const ChatListPage()));
-            },
             icon: const Icon(Icons.message_outlined, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatListPage()),
+              );
+            },
           ),
         ],
       ),
+
+      /// ---------------- BODY ----------------
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Greeting
+
+              /// ---------- GREETING ----------
               const Text(
                 "Hi, Technician!",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // 3 Feature Cards (Asset, Activity, Service)
+              /// ================= FEATURE BUTTONS =================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildFeatureCard(
-                    context,
+                  _featureCard(
                     icon: Icons.devices_other,
                     title: "Asset",
-                    page: const AssetListPage(),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const AssetListPage()),
+                    ),
                   ),
-                  _buildFeatureCard(
-                    context,
+                  _featureCard(
                     icon: Icons.history,
                     title: "Activity",
-                    page: const TechnicianActivityPage(),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const TechnicianActivityPage()),
+                    ),
                   ),
-                  _buildFeatureCard(
-                    context,
+                  _featureCard(
                     icon: Icons.build_circle,
                     title: "Service",
-                    page: const TechnicianServicePage(),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const TechnicianServicePage()),
+                    ),
+                  ),
+                  _featureCard(
+                    icon: Icons.bar_chart,
+                    title: "Report",
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const TechnicianReportPage()),
+                    ),
                   ),
                 ],
               ),
 
               const SizedBox(height: 24),
 
-              // Recent Services header with "See all"
+              /// ================= SUMMARY CARDS =================
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('services')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final docs = snapshot.data!.docs;
+
+                  final total = docs.length;
+                  final pending = docs
+                      .where((d) =>
+                          d['status'].toString().toUpperCase() == 'PENDING')
+                      .length;
+                  final inProgress = docs
+                      .where((d) =>
+                          d['status'].toString().toUpperCase() ==
+                          'IN_PROGRESS')
+                      .length;
+                  final fixed = docs
+                      .where((d) =>
+                          d['status'].toString().toUpperCase() == 'FIXED')
+                      .length;
+
+                  return Row(
+                    children: [
+                      _summaryCard("Total", total, Icons.build, Colors.teal),
+                      _summaryCard(
+                          "Pending", pending, Icons.pending, Colors.red),
+                      _summaryCard("In Progress", inProgress,
+                          Icons.build_circle, Colors.orange),
+                      _summaryCard(
+                          "Fixed", fixed, Icons.check_circle, Colors.green),
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              /// ---------- RECENT SERVICES ----------
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     "Recent Services",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const TechnicianServicePage(),
-                        ),
+                            builder: (_) => const TechnicianServicePage()),
                       );
                     },
                     child: const Text("See all"),
@@ -146,105 +212,119 @@ class TechnicianHomePage extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Recent Services list
-              Column(
-                children: _recentServices.map((s) {
-                  final color = _statusColor(s["status"]!);
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor:
-                            const Color(0xFF00BFA6).withOpacity(0.15),
-                        child: ShaderMask(
-                          shaderCallback: (Rect bounds) => const LinearGradient(
-                            colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ).createShader(bounds),
-                          blendMode: BlendMode.srcIn,
-                          child: const Icon(Icons.build, color: Colors.white),
-                        ),
-                      ),
-                      title: Text(s["id"]!),
-                      subtitle: Text(s["type"]!),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          s["status"]!,
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('services')
+                    .orderBy('createdAt', descending: true)
+                    .limit(5)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator();
+                  }
+
+                  if (snapshot.data!.docs.isEmpty) {
+                    return const Text("No service records found.");
+                  }
+
+                  return Column(
+                    children:
+                        snapshot.data!.docs.map(_serviceCard).toList(),
                   );
-                }).toList(),
+                },
               ),
             ],
           ),
         ),
       ),
 
-      // Footer
       bottomNavigationBar: const FooterNav(role: 'Technician'),
     );
   }
 
-  Widget _buildFeatureCard(
-    BuildContext context, {
+  /// ---------- SUMMARY CARD ----------
+  Widget _summaryCard(
+      String title, int value, IconData icon, Color color) {
+    return Expanded(
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(height: 6),
+              Text(
+                value.toString(),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ---------- FEATURE CARD ----------
+  Widget _featureCard({
     required IconData icon,
     required String title,
-    required Widget page,
+    required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: () =>
-          Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+      onTap: onTap,
       child: Column(
         children: [
           Container(
             height: 70,
             width: 70,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A000000), // ~10% black
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ShaderMask(
-              shaderCallback: (Rect bounds) => const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-              ).createShader(bounds),
-              blendMode: BlendMode.srcIn,
-              child: Icon(icon, size: 35, color: Colors.white),
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(15)),
             ),
+            child: Icon(icon, color: Colors.white, size: 34),
           ),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+
+  /// ---------- SERVICE CARD ----------
+  Widget _serviceCard(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final status = data['status'] ?? 'UNKNOWN';
+
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.build),
+        title: Text(data['assetName'] ?? '-'),
+        subtitle: Text(data['assetId'] ?? '-'),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: _statusColor(status).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            status,
+            style: TextStyle(
+              color: _statusColor(status),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }

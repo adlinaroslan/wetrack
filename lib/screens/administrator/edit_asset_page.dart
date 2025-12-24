@@ -23,11 +23,12 @@ class _EditAssetPageState extends State<EditAssetPage> {
 
   late String selectedStatus;
 
+  // ✅ Updated status options
   final List<String> statusOptions = [
     "In Stock",
     "In Use",
     "Re-Purchased Needed",
-    "Sold Out",
+    "Service Needed", 
     "DISPOSED",
   ];
 
@@ -57,7 +58,17 @@ class _EditAssetPageState extends State<EditAssetPage> {
       appBar: AppBar(
         title: Text("Edit Asset: ${widget.asset.name}"),
         backgroundColor: const Color(0xFF004C5C),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
+      
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -123,14 +134,14 @@ class _EditAssetPageState extends State<EditAssetPage> {
   }
 
   // ======================================
-  // SAVE CHANGES (FIXED)
+  // SAVE CHANGES
   // ======================================
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
     await FirebaseFirestore.instance
         .collection("assets")
-        .doc(widget.asset.docId) // ✅ IMPORTANT FIX
+        .doc(widget.asset.docId)
         .update({
       "name": nameController.text.trim(),
       "serialNumber": serialController.text.trim(),
@@ -147,7 +158,7 @@ class _EditAssetPageState extends State<EditAssetPage> {
       const SnackBar(content: Text("Asset updated successfully!")),
     );
 
-    Navigator.pop(context, true); // ✅ notify previous page
+    Navigator.pop(context, true);
   }
 
   // ======================================

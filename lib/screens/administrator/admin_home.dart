@@ -35,7 +35,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         return Colors.green;
       case 'IN USE':
         return Colors.orange;
-      case 'RETIRED':
+      case 'DISPOSED':
         return Colors.red;
       default:
         return Colors.grey;
