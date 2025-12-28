@@ -1,193 +1,194 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/asset_model.dart';
+import '../../services/firestore_service.dart';
 import 'technician_service_detail_page.dart';
-import '../../widgets/footer_nav.dart';
 
-class TechnicianServicePage extends StatefulWidget {
-  const TechnicianServicePage({super.key});
-
-  @override
-  State<TechnicianServicePage> createState() => _TechnicianServicePageState();
-}
-
-class _TechnicianServicePageState extends State<TechnicianServicePage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  static const Color primaryTeal = Color(0xFF00A7A7);
-  static const Color darkTeal = Color(0xFF004C5C);
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _autoCreateServiceRequests();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  // =====================================================
-  // 🔥 AUTO CREATE SERVICE REQUEST FOR ADMIN ACTION
-  // =====================================================
-  Future<void> _autoCreateServiceRequests() async {
-    final firestore = FirebaseFirestore.instance;
-
-    final assetsNeedingService = await firestore
-        .collection('assets')
-        .where('status', isEqualTo: 'Service Needed')
-        .get();
-
-    for (final assetDoc in assetsNeedingService.docs) {
-      final existingRequest = await firestore
-          .collection('service_requests')
-          .where('assetDocId', isEqualTo: assetDoc.id)
-          .where('status', isNotEqualTo: 'Fixed')
-          .limit(1)
-          .get();
-
-      if (existingRequest.docs.isEmpty) {
-        final asset = Asset.fromFirestore(assetDoc);
-
-        await firestore.collection('service_requests').add({
-          'assetDocId': asset.docId,
-          'assetId': asset.id,
-          'assetName': asset.name,
-          'damage': 'Admin reported issue',
-          'comment': 'Asset marked as Service Needed by admin',
-          'status': 'In Progress',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }
-    }
-  }
+class TechnicianServicesPage extends StatelessWidget {
+  const TechnicianServicesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Service Request"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [primaryTeal, darkTeal],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          // Align title immediately next to back button
+          titleSpacing: 0,
+          title: const Text(
+            "Services",
+            style: TextStyle(color: Colors.white),
+          ),
+          centerTitle: false, // align left
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
+          bottom: const TabBar(
+            indicatorWeight: 3,
+            labelColor: Colors.white,       // active tab label
+            unselectedLabelColor: Colors.white70, // inactive tab label
+            tabs: [
+              Tab(text: "In Progress"),
+              Tab(text: "Fixed"),
+            ],
+          ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: "In Progress"),
-            Tab(text: "Fixed"),
+        body: const TabBarView(
+          children: [
+            _ServiceList(status: "On Progress"),
+            _ServiceList(status: "Fixed"),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildServiceList("In Progress"),
-          _buildServiceList("Fixed"),
-        ],
-      ),
-      bottomNavigationBar: const FooterNav(),
     );
   }
+}
 
-  // =====================================================
-  // SERVICE REQUEST LIST
-  // =====================================================
-  Widget _buildServiceList(String status) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('service_requests')
-          .where('status', isEqualTo: status)
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+class _ServiceList extends StatelessWidget {
+  final String status;
+  const _ServiceList({required this.status});
 
-        if (snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Text(
-              "No $status service requests",
-              style: const TextStyle(color: Colors.grey),
-            ),
-          );
-        }
+  @override
+  Widget build(BuildContext context) {
+    if (status == "On Progress") {
+      return StreamBuilder<List<Map<String, dynamic>>>(
+        stream: FirestoreService().getServiceRequestsByStatus(status),
+        builder: (context, serviceSnapshot) {
+          if (!serviceSnapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (context, index) {
-            final serviceDoc = snapshot.data!.docs[index];
-            final data = serviceDoc.data() as Map<String, dynamic>;
+          return StreamBuilder<List<Map<String, dynamic>>>(
+            stream: FirestoreService().getAssetsWithServiceNeeded(),
+            builder: (context, assetSnapshot) {
+              if (!assetSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            final Color statusColor =
-                status == "Fixed" ? Colors.green : Colors.amber;
+              final allDocs = [
+                ...serviceSnapshot.data!,
+                ...assetSnapshot.data!,
+              ];
 
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                title: Text(
-                  data['assetId'],
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  "${data['assetName']}\nIssue: ${data['damage']}",
-                ),
-                isThreeLine: true,
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+              if (allDocs.isEmpty) {
+                return const Center(child: Text("No services found"));
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: allDocs.length,
+                itemBuilder: (context, index) {
+                  final data = allDocs[index];
+                  final assetId =
+                      (data['assetId'] ?? data['id'] ?? '').toString();
+                  final assetName =
+                      (data['assetName'] ?? data['name'] ?? '').toString();
+                  final serviceId =
+                      (data['serviceId'] ?? data['assetDocId'] ?? '').toString();
+
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    TextButton(
-                      onPressed: () {
+                    child: ListTile(
+                      isThreeLine: true,
+                      contentPadding: const EdgeInsets.all(12),
+                      leading: const CircleAvatar(
+                        child: Icon(Icons.build),
+                      ),
+                      title: Text(
+                        assetId.isNotEmpty ? assetId : 'Unknown Asset',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        assetName.isNotEmpty ? assetName : 'No name',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => TechnicianServiceDetailPage(
                               item: {
-                                'serviceId': serviceDoc.id,
                                 ...data,
+                                'serviceId': serviceId,
                               },
                             ),
                           ),
                         );
                       },
-                      child: const Text("View Detail"),
                     ),
-                  ],
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+    }
+
+    // FIXED TAB
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: FirestoreService().getServiceRequestsByStatus(status),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: snapshot.data!.length,
+          itemBuilder: (context, index) {
+            final data = snapshot.data![index];
+            final assetId = (data['assetId'] ?? '').toString();
+            final assetName = (data['assetName'] ?? '').toString();
+            final serviceId = (data['serviceId'] ?? '').toString();
+
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                isThreeLine: true,
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.check, color: Colors.white),
                 ),
+                title: Text(
+                  assetId,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  assetName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TechnicianServiceDetailPage(
+                        item: {
+                          ...data,
+                          'serviceId': serviceId,
+                        },
+                      ),
+                    ),
+                  );
+                },
               ),
             );
           },

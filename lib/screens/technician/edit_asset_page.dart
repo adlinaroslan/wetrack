@@ -23,12 +23,12 @@ class _EditAssetPageState extends State<EditAssetPage> {
 
   late String selectedStatus;
 
-  // ✅ Updated status options
   final List<String> statusOptions = [
     "In Stock",
     "In Use",
     "Re-Purchased Needed",
-    "Service Needed", 
+    "Service Needed",
+    "AVAILABLE",
     "DISPOSED",
   ];
 
@@ -39,110 +39,20 @@ class _EditAssetPageState extends State<EditAssetPage> {
     nameController = TextEditingController(text: widget.asset.name);
     brandController = TextEditingController(text: widget.asset.brand);
     categoryController = TextEditingController(text: widget.asset.category);
-    serialController =
-        TextEditingController(text: widget.asset.serialNumber);
-    locationController =
-        TextEditingController(text: widget.asset.location);
-    imagePathController =
-        TextEditingController(text: widget.asset.imageUrl);
+    serialController = TextEditingController(text: widget.asset.serialNumber);
+    locationController = TextEditingController(text: widget.asset.location);
+    imagePathController = TextEditingController(text: widget.asset.imageUrl);
 
-    selectedStatus = statusOptions.contains(widget.asset.status)
-        ? widget.asset.status
-        : statusOptions.first;
+    selectedStatus = widget.asset.status;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: Text("Edit Asset: ${widget.asset.name}"),
-        backgroundColor: const Color(0xFF004C5C),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
-      
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildLabel("Asset Name"),
-              _buildTextField(nameController),
-
-              _buildLabel("Serial Number"),
-              _buildTextField(serialController),
-
-              _buildLabel("Brand"),
-              _buildTextField(brandController),
-
-              _buildLabel("Category"),
-              _buildTextField(categoryController),
-
-              _buildLabel("Location"),
-              _buildTextField(locationController),
-
-              _buildLabel("Image Path"),
-              _buildTextField(imagePathController),
-
-              const SizedBox(height: 10),
-
-              _buildLabel("Status"),
-              DropdownButtonFormField<String>(
-                value: selectedStatus,
-                decoration: _inputDecoration(),
-                items: statusOptions.map((status) {
-                  return DropdownMenuItem(
-                    value: status,
-                    child: Text(status),
-                  );
-                }).toList(),
-                onChanged: (value) =>
-                    setState(() => selectedStatus = value!),
-              ),
-
-              const SizedBox(height: 25),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveChanges,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: const Color(0xFF00A7A7),
-                  ),
-                  child: const Text(
-                    "Save Changes",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ======================================
-  // SAVE CHANGES
-  // ======================================
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await FirebaseFirestore.instance
-        .collection("assets")
-        .doc(widget.asset.docId)
-        .update({
+    final firestore = FirebaseFirestore.instance;
+
+    // 1️⃣ Update asset
+    await firestore.collection("assets").doc(widget.asset.docId).update({
       "name": nameController.text.trim(),
       "serialNumber": serialController.text.trim(),
       "brand": brandController.text.trim(),
@@ -152,45 +62,102 @@ class _EditAssetPageState extends State<EditAssetPage> {
       "status": selectedStatus,
     });
 
+    // 2️⃣ CREATE SERVICE REQUEST IF NEEDED
+    if (selectedStatus == "Service Needed") {
+      final existing = await firestore
+          .collection('service_requests')
+          .where('assetDocId', isEqualTo: widget.asset.docId)
+          .where('status', isEqualTo: 'On Progress')
+          .limit(1)
+          .get();
+
+      if (existing.docs.isEmpty) {
+        await firestore.collection('service_requests').add({
+          'assetDocId': widget.asset.docId,
+          'assetId': widget.asset.id,
+          'assetName': widget.asset.name,
+          'assetType': widget.asset.category,
+          'damage': 'Reported by admin',
+          'comment': '-',
+          'user': 'Admin',
+          'status': 'On Progress',
+'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Asset updated successfully!")),
+      const SnackBar(
+        content: Text("Changes successfully saved."),
+        backgroundColor: Colors.green,
+      ),
     );
 
     Navigator.pop(context, true);
   }
 
-  // ======================================
-  // HELPERS
-  // ======================================
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6, top: 16),
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.w600),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Edit Asset")),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _label("Asset Name"),
+              _field(nameController),
+
+              _label("Serial Number"),
+              _field(serialController),
+
+              _label("Brand"),
+              _field(brandController),
+
+              _label("Category"),
+              _field(categoryController),
+
+              _label("Location"),
+              _field(locationController),
+
+              _label("Image Path"),
+              _field(imagePathController),
+
+              _label("Status"),
+              DropdownButtonFormField<String>(
+                value: selectedStatus,
+                items: statusOptions
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => setState(() => selectedStatus = v!),
+              ),
+
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saveChanges,
+                  child: const Text("Save Changes"),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller) {
-    return TextFormField(
-      controller: controller,
-      decoration: _inputDecoration(),
-      validator: (v) =>
-          v == null || v.isEmpty ? "This field cannot be empty" : null,
-    );
-  }
+  Widget _label(String t) => Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 6),
+        child: Text(t, style: const TextStyle(fontWeight: FontWeight.w600)),
+      );
 
-  InputDecoration _inputDecoration() {
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-    );
-  }
+  Widget _field(TextEditingController c) => TextFormField(
+        controller: c,
+        validator: (v) => v!.isEmpty ? "Required" : null,
+      );
 }

@@ -129,7 +129,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const TechnicianServicePage()),
+                          builder: (_) => const TechnicianServicesPage()),
                     ),
                   ),
                   _featureCard(
@@ -202,7 +202,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const TechnicianServicePage()),
+                            builder: (_) => const TechnicianServicesPage()),
                       );
                     },
                     child: const Text("See all"),

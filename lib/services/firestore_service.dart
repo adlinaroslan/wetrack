@@ -36,6 +36,38 @@ class FirestoreService {
   CollectionReference<Map<String, dynamic>> get assetHistoryRef =>
       _db.collection('asset_history');
 
+  /// Service requests created by technicians/admins when an asset needs service.
+  /// Kept separate from `requests` (which are borrow requests).
+  CollectionReference<Map<String, dynamic>> get serviceRequestsRef =>
+      _db.collection('service_requests');
+
+  /// Stream service requests filtered by status (e.g., 'On Progress', 'Fixed')
+  Stream<List<Map<String, dynamic>>> getServiceRequestsByStatus(
+      String status) {
+    return serviceRequestsRef
+        .where('status', isEqualTo: status)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) {
+              final m = Map<String, dynamic>.from(d.data());
+              m['serviceId'] = d.id;
+              return m;
+            }).toList());
+  }
+
+  /// Stream assets with 'Service Needed' status that haven't been converted to service_requests yet
+  Stream<List<Map<String, dynamic>>> getAssetsWithServiceNeeded() {
+    return assetsRef
+        .where('status', isEqualTo: 'Service Needed')
+        .snapshots()
+        .map((snap) => snap.docs.map((d) {
+              final asset = d.data().toFirestore();
+              asset['assetDocId'] = d.id;
+              asset['type'] = 'asset'; // Mark as asset, not service_request
+              return asset;
+            }).toList());
+  }
+
   // ---------------------- USER PROFILE ----------------------
 
   Future<UserModel?> getUserProfile(String uid) async {
