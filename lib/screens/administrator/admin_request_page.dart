@@ -29,14 +29,12 @@ StatusColor getStatusColor(String status) {
       return const StatusColor(
           background: Color(0xFFFFF8E1), text: Colors.amber);
     case 'DECLINED':
-      return const StatusColor(
-          background: Color(0xFFFDECEA), text: Colors.red);
+      return const StatusColor(background: Color(0xFFFDECEA), text: Colors.red);
     case 'COMPLETED':
       return const StatusColor(
           background: Color(0xFFE8F5E9), text: Colors.greenAccent);
     default:
-      return const StatusColor(
-          background: Colors.grey, text: Colors.black54);
+      return const StatusColor(background: Colors.grey, text: Colors.black54);
   }
 }
 
@@ -75,7 +73,6 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
               ),
             ),
             const SizedBox(width: 12),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +88,6 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                   Text("User : ${r.userName}",
                       style: const TextStyle(fontSize: 12)),
                   const SizedBox(height: 10),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -99,7 +95,6 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                         onPressed: () => _openDetail(r),
                         child: const Text("View Detail"),
                       ),
-
                       if (r.status.toUpperCase() == 'PENDING' ||
                           r.status.toUpperCase() == 'PENDING_REQUEST')
                         Row(
@@ -112,6 +107,7 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                                   borrowerUserId: r.userId,
                                   dueDate: DateTime.now()
                                       .add(const Duration(days: 7)),
+                                  requestedDate: r.requestedDate,
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -178,8 +174,8 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
 
         if (list.isEmpty) {
           return const Center(
-              child: Text("No requests",
-                  style: TextStyle(color: Colors.black54)));
+              child:
+                  Text("No requests", style: TextStyle(color: Colors.black54)));
         }
 
         return ListView.builder(
@@ -210,7 +206,7 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
           bottom: const TabBar(
             indicatorColor: Colors.white,
             indicatorWeight: 3,
-            labelColor: Colors.white,          // SELECTED TAB
+            labelColor: Colors.white, // SELECTED TAB
             unselectedLabelColor: Colors.white70, // UNSELECTED TAB
             tabs: [
               Tab(text: "In Progress"),

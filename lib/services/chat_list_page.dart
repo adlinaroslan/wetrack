@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:wetrack/models/chat_model.dart';
-import 'package:wetrack/screens/user/logout_page.dart';
 import 'package:wetrack/screens/user/user_profile_page.dart';
 import 'package:wetrack/screens/user/user_notification.dart';
 import 'package:wetrack/services/chat_detail_page.dart';

@@ -64,6 +64,8 @@ class _UserHistoryPageState extends State<UserHistoryPage>
 
   // --- Widget Builders ---
 
+  // ... inside _UserHistoryPageState
+
   Widget _buildAssetList(BuildContext context, String statusFilter) {
     final userId = _auth.currentUser?.uid;
 
@@ -72,13 +74,13 @@ class _UserHistoryPageState extends State<UserHistoryPage>
     }
 
     Stream<List<Asset>> assetStream;
+
     if (statusFilter == 'Ongoing') {
-      // Use getBorrowedAssets for 'Ongoing' (status == 'BORROWED')
+      // Ongoing stays the same (looking at currently borrowed assets)
       assetStream = _firestoreService.getBorrowedAssets(userId);
     } else {
-      // Use getHistoryByStatusAndUser for 'Returned' and 'Declined'
-      assetStream =
-          _firestoreService.getHistoryByStatusAndUser(userId, statusFilter);
+      // 🌟 UPDATED: Use the new history stream for 'RETURNED' and 'DECLINED'
+      assetStream = _firestoreService.getAssetHistory(userId, statusFilter);
     }
 
     final bottomPadding = MediaQuery.of(context).padding.bottom + 80;
@@ -91,9 +93,7 @@ class _UserHistoryPageState extends State<UserHistoryPage>
         }
 
         if (snapshot.hasError) {
-          debugPrint('History Error: ${snapshot.error}');
-          return Center(
-              child: Text('Error loading history: ${snapshot.error}'));
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         final assets = snapshot.data ?? [];
@@ -101,7 +101,7 @@ class _UserHistoryPageState extends State<UserHistoryPage>
         if (assets.isEmpty) {
           return Center(
             child: Text(
-              "No history records found under: '$statusFilter'",
+              "No $statusFilter records found.",
               style: const TextStyle(color: Colors.black54, fontSize: 16),
             ),
           );

@@ -8,6 +8,8 @@ class NotificationModel {
   final bool read;
   final String? type;
   final String? relatedId;
+  final String? userId;
+  final String? role;
 
   NotificationModel({
     required this.id,
@@ -17,6 +19,8 @@ class NotificationModel {
     required this.read,
     this.type,
     this.relatedId,
+    this.userId,
+    this.role,
   });
 
   factory NotificationModel.fromFirestore(
@@ -27,10 +31,12 @@ class NotificationModel {
       id: doc.id,
       title: data['title'] ?? '',
       message: data['message'] ?? '',
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
       read: data['read'] ?? false,
       type: data['type'],
       relatedId: data['relatedId'],
+      userId: data['userId'],
+      role: data['role'],
     );
   }
 }

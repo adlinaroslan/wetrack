@@ -8,14 +8,14 @@ class Asset {
   final String name;
   final String brand;
   final String category;
-  final String imageUrl; // REQUIRED
+  final String imageUrl;
   final String location;
   final String status;
   final String? registerDate;
   final String? borrowedByUserId;
   final DateTime? dueDateTime;
-  final DateTime? borrowDate; // <--- NEW: For history tracking
-  final DateTime? returnDate; // <--- NEW: For history tracking
+  final DateTime? borrowDate;
+  final DateTime? returnDate;
 
   Asset({
     required this.docId,
@@ -34,9 +34,6 @@ class Asset {
     this.returnDate,
   });
 
-  // ============================
-  // Firestore → Asset
-  // ============================
   factory Asset.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
 
@@ -53,7 +50,6 @@ class Asset {
       return null;
     }
 
-    // 🔴 HARD FAIL IF IMAGE MISSING (GOOD!)
     final imageUrl = data['imageUrl'];
     if (imageUrl == null || imageUrl.toString().isEmpty) {
       throw Exception("Asset ${doc.id} has no imageUrl saved");
@@ -71,15 +67,24 @@ class Asset {
       status: data['status'] ?? 'In Stock',
       registerDate: parseRegisterDate(data['registerDate']),
       borrowedByUserId: data['borrowedByUserId'],
+
       dueDateTime: data['dueDateTime'] != null
           ? (data['dueDateTime'] as Timestamp).toDate()
+          : null,
+
+      // FIX: Check for 'borrowDate' FIRST, fallback to 'createdAt' from your DB
+      borrowDate: data['borrowDate'] != null
+          ? (data['borrowDate'] as Timestamp).toDate()
+          : (data['createdAt'] != null
+              ? (data['createdAt'] as Timestamp).toDate()
+              : null),
+
+      returnDate: data['returnDate'] != null
+          ? (data['returnDate'] as Timestamp).toDate()
           : null,
     );
   }
 
-  // ============================
-  // Asset → Firestore
-  // ============================
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
@@ -94,6 +99,8 @@ class Asset {
       'borrowedByUserId': borrowedByUserId,
       'dueDateTime':
           dueDateTime != null ? Timestamp.fromDate(dueDateTime!) : null,
+      'borrowDate': borrowDate != null ? Timestamp.fromDate(borrowDate!) : null,
+      'returnDate': returnDate != null ? Timestamp.fromDate(returnDate!) : null,
     };
   }
 

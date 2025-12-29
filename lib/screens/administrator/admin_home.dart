@@ -6,6 +6,7 @@ import 'admin_activity_page.dart';
 import 'asset_list_page.dart';
 import 'admin_request_page.dart';
 import 'admin_profile_page.dart';
+import 'admin_notification_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -128,7 +129,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AdminNotificationPage()),
+              );
+            },
           ),
           // Messages icon: open chat list
           IconButton(
