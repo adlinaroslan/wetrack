@@ -1,148 +1,197 @@
 import 'package:flutter/material.dart';
+import '../../services/firestore_service.dart';
 import 'technician_service_detail_page.dart';
-import '../../widgets/footer_nav.dart';
 
-class TechnicianServicePage extends StatefulWidget {
-  const TechnicianServicePage({super.key});
-
-  @override
-  State<TechnicianServicePage> createState() => _TechnicianServicePageState();
-}
-
-class _TechnicianServicePageState extends State<TechnicianServicePage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  final List<Map<String, dynamic>> onProgress = [
-    {
-      'id': 'B230159',
-      'type': 'Laptop',
-      'damage': 'Keyboard Malfunction',
-      'status': 'In Progress',
-    },
-    {
-      'id': 'RQE6138',
-      'type': 'Power Cable',
-      'damage': 'Broken Wire',
-      'status': 'In Progress',
-    },
-  ];
-
-  final List<Map<String, dynamic>> fixed = [
-    {
-      'id': 'A67495',
-      'type': 'Electronics',
-      'damage': 'Screen Replaced',
-      'status': 'Fixed',
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class TechnicianServicesPage extends StatelessWidget {
+  const TechnicianServicesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        title: const Text("Service Request"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          // Align title immediately next to back button
+          titleSpacing: 0,
+          title: const Text(
+            "Services",
+            style: TextStyle(color: Colors.white),
+          ),
+          centerTitle: false, // align left
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
+          bottom: const TabBar(
+            indicatorWeight: 3,
+            labelColor: Colors.white,       // active tab label
+            unselectedLabelColor: Colors.white70, // inactive tab label
+            tabs: [
+              Tab(text: "In Progress"),
+              Tab(text: "Fixed"),
+            ],
+          ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          // 🟢 KEY CHANGE 1: Set the selected tab label color to white
-          labelColor: Colors.white,
-          // 🟢 KEY CHANGE 2: Set the unselected tab label color to a lighter white for contrast
-          unselectedLabelColor: Colors.white70,
-          // 🟢 KEY CHANGE 3: Set the indicator (underline) color to white
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'On Progress'),
-            Tab(text: 'Fixed'),
+        body: const TabBarView(
+          children: [
+            _ServiceList(status: "On Progress"),
+            _ServiceList(status: "Fixed"),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildList(context, onProgress),
-          _buildList(context, fixed),
-        ],
-      ),
-      bottomNavigationBar: const FooterNav(),
     );
   }
+}
 
-  Widget _buildList(BuildContext context, List<Map<String, dynamic>> items) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        Color statusColor;
+class _ServiceList extends StatelessWidget {
+  final String status;
+  const _ServiceList({required this.status});
 
-        if (item['status'] == 'Fixed') {
-          statusColor = Colors.green;
-        } else if (item['status'] == 'In Progress') {
-          statusColor = Colors.amber;
-        } else {
-          statusColor = Colors.red;
+  @override
+  Widget build(BuildContext context) {
+    if (status == "On Progress") {
+      return StreamBuilder<List<Map<String, dynamic>>>(
+        stream: FirestoreService().getServiceRequestsByStatus(status),
+        builder: (context, serviceSnapshot) {
+          if (!serviceSnapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return StreamBuilder<List<Map<String, dynamic>>>(
+            stream: FirestoreService().getAssetsWithServiceNeeded(),
+            builder: (context, assetSnapshot) {
+              if (!assetSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final allDocs = [
+                ...serviceSnapshot.data!,
+                ...assetSnapshot.data!,
+              ];
+
+              if (allDocs.isEmpty) {
+                return const Center(child: Text("No services found"));
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: allDocs.length,
+                itemBuilder: (context, index) {
+                  final data = allDocs[index];
+                  final assetId =
+                      (data['assetId'] ?? data['id'] ?? '').toString();
+                  final assetName =
+                      (data['assetName'] ?? data['name'] ?? '').toString();
+                  final serviceId =
+                      (data['serviceId'] ?? data['assetDocId'] ?? '').toString();
+
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      isThreeLine: true,
+                      contentPadding: const EdgeInsets.all(12),
+                      leading: const CircleAvatar(
+                        child: Icon(Icons.build),
+                      ),
+                      title: Text(
+                        assetId.isNotEmpty ? assetId : 'Unknown Asset',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        assetName.isNotEmpty ? assetName : 'No name',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TechnicianServiceDetailPage(
+                              item: {
+                                ...data,
+                                'serviceId': serviceId,
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+    }
+
+    // FIXED TAB
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: FirestoreService().getServiceRequestsByStatus(status),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
         }
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 3,
-          child: ListTile(
-            title: Text(item['id']),
-            subtitle: Text('${item['type']} - ${item['damage']}'),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    item['status'],
-                    style: TextStyle(color: statusColor, fontSize: 12),
-                  ),
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: snapshot.data!.length,
+          itemBuilder: (context, index) {
+            final data = snapshot.data![index];
+            final assetId = (data['assetId'] ?? '').toString();
+            final assetName = (data['assetName'] ?? '').toString();
+            final serviceId = (data['serviceId'] ?? '').toString();
+
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                isThreeLine: true,
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.check, color: Colors.white),
                 ),
-                TextButton(
-                  child: const Text('View Detail'),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TechnicianServiceDetailPage(item: item),
+                title: Text(
+                  assetId,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  assetName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TechnicianServiceDetailPage(
+                        item: {
+                          ...data,
+                          'serviceId': serviceId,
+                        },
                       ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         );
       },
     );

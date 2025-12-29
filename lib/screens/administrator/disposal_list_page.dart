@@ -26,8 +26,8 @@ class DisposalListPage extends StatelessWidget {
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('assets')
-              .where('status', isEqualTo: 'Disposed')
-              .snapshots(),
+              .where('status', isEqualTo: 'DISPOSED') // ✅ must match exactly
+              .snapshots(), // removed orderBy to avoid index issue
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -47,19 +47,18 @@ class DisposalListPage extends StatelessWidget {
                 final asset = disposedAssets[index];
                 return Card(
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: ListTile(
-                    leading: Image.asset(
-                      asset.imageUrl,
-                      height: 40,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.image_not_supported),
-                    ),
+                    leading: _buildImage(asset.imageUrl),
                     title: Text(asset.name),
                     subtitle: Text("ID: ${asset.id} | ${asset.brand}"),
                     trailing: const Text(
-                      "Disposed",
-                      style: TextStyle(color: Colors.red),
+                      "DISPOSED",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 );
@@ -68,6 +67,28 @@ class DisposalListPage extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildImage(String imageUrl) {
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        height: 40,
+        width: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.image_not_supported),
+      );
+    }
+
+    return Image.asset(
+      imageUrl,
+      height: 40,
+      width: 40,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) =>
+          const Icon(Icons.image_not_supported),
     );
   }
 }

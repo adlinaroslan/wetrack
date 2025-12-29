@@ -242,8 +242,6 @@ class _AddAssetPageState extends State<AddAssetPage> {
                   DropdownMenuItem(
                       value: "Re-Purchased Needed",
                       child: Text("Re-Purchased Needed")),
-                  DropdownMenuItem(
-                      value: "Sold Out", child: Text("Sold Out")),
                 ],
                 onChanged: (value) =>
                     setState(() => status = value!),

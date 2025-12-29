@@ -28,6 +28,7 @@ class AssetDetailPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
+            tooltip: "Edit Asset",
             onPressed: () {
               Navigator.push(
                 context,
@@ -39,113 +40,109 @@ class AssetDetailPage extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: () => _confirmDispose(context, asset),
+            tooltip: "Dispose Asset",
+            onPressed: () => _confirmDispose(context),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Asset Information",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              _buildInfoCard(context, asset),
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A7A7),
-                    foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  icon: const Icon(Icons.qr_code),
-                  label: const Text("View QR Code"),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => QRViewerPage(asset: asset),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+
+      // Live Firestore listener for updates
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('assets')
+            .doc(asset.docId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text("Asset not found."));
+          }
+
+          final updatedAsset = Asset.fromFirestore(snapshot.data!);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: _buildInfoCard(context, updatedAsset),
+          );
+        },
       ),
     );
   }
 
-  // ===============================
-  // INFO CARD
-  // ===============================
+  // Asset info card including image
   Widget _buildInfoCard(BuildContext context, Asset asset) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // IMAGE
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: _buildAssetImage(asset.imageUrl),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // IMAGE
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+              color: Colors.white,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildAssetImage(asset.imageUrl),
             ),
           ),
+        ),
+        const SizedBox(height: 20),
 
-          const SizedBox(height: 20),
+        // TEXT INFO
+        _infoRow("Asset Name", asset.name),
+        _infoRow("Asset ID", asset.id),
+        _infoRow("Serial Number", asset.serialNumber),
+        _infoRow("Brand", asset.brand),
+        _infoRow("Category", asset.category),
+        _infoRow("Status", asset.status),
+        _infoRow("Location", asset.location),
+        _infoRow("Register Date", asset.registerDate ?? "-"),
+        _infoRow("Borrowed By", asset.borrowedByUserId ?? "-"),
+        _infoRow(
+          "Due Date",
+          asset.dueDateTime != null
+              ? asset.dueDateTime!.toLocal().toString().split(' ')[0]
+              : "-",
+        ),
 
-          _infoRow("Asset ID", asset.id),
-          _infoRow("Serial Number", asset.serialNumber),
-          _infoRow("Asset Name", asset.name),
-          _infoRow("Brand", asset.brand),
-          _infoRow("Category", asset.category),
-          _infoRow("Status", asset.status),
-          _infoRow("Location", asset.location),
-          _infoRow("Register Date", asset.registerDate ?? "-"),
-          _infoRow("Borrowed By", asset.borrowedByUserId ?? "-"),
-          _infoRow(
-            "Due Date",
-            asset.dueDateTime != null
-                ? asset.dueDateTime!.toLocal().toString().split(' ')[0]
-                : "-",
+        const SizedBox(height: 20),
+
+        // VIEW QR CODE BUTTON
+        Center(
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00A7A7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.qr_code),
+            label: const Text("View QR Code"),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => QRViewerPage(asset: asset),
+                ),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // ===============================
-  // IMAGE HANDLER (NO DEFAULT IMAGE)
-  // ===============================
+  // Display image from asset or network
   Widget _buildAssetImage(String imageUrl) {
-    if (imageUrl.isEmpty) {
-      return _imagePlaceholder();
-    }
+    if (imageUrl.isEmpty) return _imagePlaceholder();
 
     if (imageUrl.startsWith('http')) {
       return Image.network(
@@ -179,9 +176,7 @@ class AssetDetailPage extends StatelessWidget {
     );
   }
 
-  // ===============================
-  // INFO ROW
-  // ===============================
+  // Text row widget
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -195,15 +190,13 @@ class AssetDetailPage extends StatelessWidget {
     );
   }
 
-  // ===============================
-  // DISPOSE
-  // ===============================
-  void _confirmDispose(BuildContext context, Asset asset) {
+  // CONFIRM DISPOSE
+  void _confirmDispose(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Dispose Asset"),
-        content: Text("Are you sure you want to dispose '${asset.name}'?"),
+        content: Text("Dispose '${asset.name}' permanently?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -214,17 +207,19 @@ class AssetDetailPage extends StatelessWidget {
             child: const Text("Dispose"),
             onPressed: () async {
               await FirebaseFirestore.instance
-                  .collection("assets")
-                  .doc(asset.id)
+                  .collection('assets')
+                  .doc(asset.docId)
                   .update({
                 "status": "DISPOSED",
                 "location": "Disposed",
+                "disposedAt": FieldValue.serverTimestamp(),
               });
 
-              Navigator.pop(context);
+              Navigator.pop(context); // close dialog
+              Navigator.pop(context); // go back to list
 
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("${asset.name} disposed.")),
+                SnackBar(content: Text("${asset.name} disposed")),
               );
             },
           ),

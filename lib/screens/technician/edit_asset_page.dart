@@ -21,7 +21,16 @@ class _EditAssetPageState extends State<EditAssetPage> {
   late TextEditingController locationController;
   late TextEditingController imagePathController;
 
-  String selectedStatus = "AVAILABLE";
+  late String selectedStatus;
+
+  final List<String> statusOptions = [
+    "In Stock",
+    "In Use",
+    "Re-Purchased Needed",
+    "Service Needed",
+    "AVAILABLE",
+    "DISPOSED",
+  ];
 
   @override
   void initState() {
@@ -37,14 +46,62 @@ class _EditAssetPageState extends State<EditAssetPage> {
     selectedStatus = widget.asset.status;
   }
 
+  Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final firestore = FirebaseFirestore.instance;
+
+    // 1️⃣ Update asset
+    await firestore.collection("assets").doc(widget.asset.docId).update({
+      "name": nameController.text.trim(),
+      "serialNumber": serialController.text.trim(),
+      "brand": brandController.text.trim(),
+      "category": categoryController.text.trim(),
+      "location": locationController.text.trim(),
+      "imageUrl": imagePathController.text.trim(),
+      "status": selectedStatus,
+    });
+
+    // 2️⃣ CREATE SERVICE REQUEST IF NEEDED
+    if (selectedStatus == "Service Needed") {
+      final existing = await firestore
+          .collection('service_requests')
+          .where('assetDocId', isEqualTo: widget.asset.docId)
+          .where('status', isEqualTo: 'On Progress')
+          .limit(1)
+          .get();
+
+      if (existing.docs.isEmpty) {
+        await firestore.collection('service_requests').add({
+          'assetDocId': widget.asset.docId,
+          'assetId': widget.asset.id,
+          'assetName': widget.asset.name,
+          'assetType': widget.asset.category,
+          'damage': 'Reported by admin',
+          'comment': '-',
+          'user': 'Admin',
+          'status': 'On Progress',
+'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Changes successfully saved."),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pop(context, true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Edit Asset: ${widget.asset.name}"),
-        backgroundColor: Colors.blue,
-      ),
-
+      appBar: AppBar(title: const Text("Edit Asset")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -52,71 +109,39 @@ class _EditAssetPageState extends State<EditAssetPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _label("Asset Name"),
+              _field(nameController),
 
-              // --- NAME ---
-              _buildLabel("Asset Name"),
-              _buildTextField(nameController),
+              _label("Serial Number"),
+              _field(serialController),
 
-              // --- SERIAL NUMBER ---
-              _buildLabel("Serial Number"),
-              _buildTextField(serialController),
+              _label("Brand"),
+              _field(brandController),
 
-              // --- BRAND ---
-              _buildLabel("Brand"),
-              _buildTextField(brandController),
+              _label("Category"),
+              _field(categoryController),
 
-              // --- CATEGORY ---
-              _buildLabel("Category"),
-              _buildTextField(categoryController),
+              _label("Location"),
+              _field(locationController),
 
-              // --- LOCATION ---
-              _buildLabel("Location"),
-              _buildTextField(locationController),
+              _label("Image Path"),
+              _field(imagePathController),
 
-              // --- IMAGE PATH ---
-              _buildLabel("Image Path"),
-              _buildTextField(imagePathController),
-
-              const SizedBox(height: 10),
-
-              // --- STATUS DROPDOWN ---
-              _buildLabel("Status"),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: const InputDecoration(border: InputBorder.none),
-                  items: const [
-                    DropdownMenuItem(value: "AVAILABLE", child: Text("AVAILABLE")),
-                    DropdownMenuItem(value: "BORROWED", child: Text("BORROWED")),
-                    DropdownMenuItem(value: "MAINTENANCE", child: Text("MAINTENANCE")),
-                    DropdownMenuItem(value: "DISPOSED", child: Text("DISPOSED")),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedStatus = value!;
-                    });
-                  },
-                ),
+              _label("Status"),
+              DropdownButtonFormField<String>(
+                value: selectedStatus,
+                items: statusOptions
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => setState(() => selectedStatus = v!),
               ),
 
-              const SizedBox(height: 25),
-
-              // --- SAVE BUTTON ---
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _saveChanges,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: const Text("Save Changes", style: TextStyle(fontSize: 16)),
+                  child: const Text("Save Changes"),
                 ),
               ),
             ],
@@ -126,68 +151,13 @@ class _EditAssetPageState extends State<EditAssetPage> {
     );
   }
 
+  Widget _label(String t) => Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 6),
+        child: Text(t, style: const TextStyle(fontWeight: FontWeight.w600)),
+      );
 
-  // ======================================
-  // SAVE CHANGES TO FIRESTORE
-  // ======================================
-  Future<void> _saveChanges() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final updatedData = {
-      "name": nameController.text.trim(),
-      "serialNumber": serialController.text.trim(),
-      "brand": brandController.text.trim(),
-      "category": categoryController.text.trim(),
-      "location": locationController.text.trim(),
-      "imagePath": imagePathController.text.trim(),
-      "status": selectedStatus,
-    };
-
-    await FirebaseFirestore.instance
-        .collection("assets")
-        .doc(widget.asset.id)
-        .update(updatedData);
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Asset updated successfully!")),
-    );
-
-    Navigator.pop(context);
-  }
-
-
-  // ======================================
-  // REUSABLE WIDGETS
-  // ======================================
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6, top: 16),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      validator: (value) =>
-          value == null || value.isEmpty ? "This field cannot be empty" : null,
-    );
-  }
+  Widget _field(TextEditingController c) => TextFormField(
+        controller: c,
+        validator: (v) => v!.isEmpty ? "Required" : null,
+      );
 }

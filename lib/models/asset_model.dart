@@ -63,7 +63,7 @@ class Asset {
       brand: data['brand'] ?? 'Unknown',
       category: data['category'] ?? 'General',
       imageUrl: imageUrl,
-      location: data['location'] ?? 'Available',
+      location: data['location'] ?? 'GO',
       status: data['status'] ?? 'In Stock',
       registerDate: parseRegisterDate(data['registerDate']),
       borrowedByUserId: data['borrowedByUserId'],
