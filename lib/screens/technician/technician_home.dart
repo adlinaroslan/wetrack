@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:wetrack/screens/technician/technician_notification_page.dart';
 
 import '../../widgets/footer_nav.dart';
 import '../../services/chat_list_page.dart';
@@ -74,7 +75,13 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const TechnicianNotificationPage()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.message_outlined, color: Colors.white),
@@ -163,9 +170,8 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
 
               /// ================= SUMMARY CARDS =================
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('assets')
-                    .snapshots(),
+                stream:
+                    FirebaseFirestore.instance.collection('assets').snapshots(),
                 builder: (context, assetSnap) {
                   if (!assetSnap.hasData) {
                     return const CircularProgressIndicator();
@@ -192,8 +198,8 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                         final status =
                             (sd['status'] ?? '').toString().toLowerCase();
 
-                        String key =
-                            (sd['assetDocId'] ?? sd['assetId'] ?? '').toString();
+                        String key = (sd['assetDocId'] ?? sd['assetId'] ?? '')
+                            .toString();
                         if (key.isEmpty) key = d.id;
 
                         if (status.contains('pending')) {
@@ -208,14 +214,14 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                       /// ------- Updated Summary Card UI like Admin -------
                       return Row(
                         children: [
-                          _summaryCard(
-                              "Total Assets", totalAssets, Icons.devices, Color(0xFF00A7A7)),
-                          _summaryCard(
-                              "Pending", pendingSet.length, Icons.pending_actions, Color(0xFF00A7A7)),
-                          _summaryCard(
-                              "In Progress", inProgressSet.length, Icons.check_circle, Color(0xFF00A7A7)),
-                          _summaryCard(
-                              "Fixed", fixedSet.length, Icons.computer, Color(0xFF00A7A7)),
+                          _summaryCard("Total Assets", totalAssets,
+                              Icons.devices, Color(0xFF00A7A7)),
+                          _summaryCard("Pending", pendingSet.length,
+                              Icons.pending_actions, Color(0xFF00A7A7)),
+                          _summaryCard("In Progress", inProgressSet.length,
+                              Icons.check_circle, Color(0xFF00A7A7)),
+                          _summaryCard("Fixed", fixedSet.length, Icons.computer,
+                              Color(0xFF00A7A7)),
                         ],
                       );
                     },
@@ -248,8 +254,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                     children: snap.data!.docs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
                       final assetId = data['assetId'] ?? '';
-                      final action =
-                          (data['action'] ?? 'Activity').toString();
+                      final action = (data['action'] ?? 'Activity').toString();
                       final date = _parseDate(data) ?? DateTime.now();
                       final formattedDate =
                           "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
@@ -312,8 +317,8 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color:
-                                          _assetStatusColor(status).withOpacity(0.15),
+                                      color: _assetStatusColor(status)
+                                          .withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
@@ -344,8 +349,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                 children: [
                   const Text(
                     "Monthly Service Requests",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   DropdownButton<String>(
                     value: _selectedYear,
@@ -397,7 +401,18 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
                           showTitles: true,
                           getTitlesWidget: (v, _) {
                             const m = [
-                              'J','F','M','A','M','J','J','A','S','O','N','D'
+                              'J',
+                              'F',
+                              'M',
+                              'A',
+                              'M',
+                              'J',
+                              'J',
+                              'A',
+                              'S',
+                              'O',
+                              'N',
+                              'D'
                             ];
                             return Text(m[v.toInt()]);
                           },
@@ -434,7 +449,8 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
               const SizedBox(height: 6),
               Text(
                 value.toString(),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(title,
                   textAlign: TextAlign.center,
@@ -469,8 +485,7 @@ class _TechnicianHomePageState extends State<TechnicianHomePage> {
             child: Icon(icon, color: Colors.white, size: 34),
           ),
           const SizedBox(height: 8),
-          Text(title,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );

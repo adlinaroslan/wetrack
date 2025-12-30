@@ -25,6 +25,7 @@ class _TechnicianServiceDetailPageState
     super.initState();
     _itemData = Map<String, dynamic>.from(widget.item);
     _loadAssetDetailsIfNeeded().then((_) => _subscribeToAssetIfExists());
+    _subscribeToServiceRequest();
   }
 
   void _subscribeToAssetIfExists() {
@@ -43,12 +44,33 @@ class _TechnicianServiceDetailPageState
       setState(() {
         _itemData['assetId'] = data['id'] ?? _itemData['assetId'];
         _itemData['assetName'] = data['name'] ?? _itemData['assetName'];
-        _itemData['serialNumber'] = data['serialNumber'] ?? _itemData['serialNumber'];
+        _itemData['serialNumber'] =
+            data['serialNumber'] ?? _itemData['serialNumber'];
         _itemData['brand'] = data['brand'] ?? _itemData['brand'];
         _itemData['category'] = data['category'] ?? _itemData['category'];
         _itemData['location'] = data['location'] ?? _itemData['location'];
         // Don't overwrite the service request status with asset status
         // The service request status is the source of truth for the button visibility
+      });
+    });
+  }
+
+  void _subscribeToServiceRequest() {
+    final serviceId = (_itemData['serviceId'] ?? '').toString();
+    if (serviceId.isEmpty) return;
+
+    FirebaseFirestore.instance
+        .collection('service_requests')
+        .doc(serviceId)
+        .snapshots()
+        .listen((snap) {
+      if (!snap.exists) return;
+      final data = snap.data() as Map<String, dynamic>;
+      if (!mounted) return;
+      setState(() {
+        _itemData['status'] = data['status'] ?? _itemData['status'];
+        _itemData['fixedAt'] = data['fixedAt'] ?? _itemData['fixedAt'];
+        _itemData['userName'] = data['userName'] ?? _itemData['userName'];
       });
     });
   }
@@ -72,7 +94,8 @@ class _TechnicianServiceDetailPageState
       }
 
       if ((assetSnap == null || !assetSnap.exists) && assetIdField.isNotEmpty) {
-        final cand = await firestore.collection('assets').doc(assetIdField).get();
+        final cand =
+            await firestore.collection('assets').doc(assetIdField).get();
         if (cand.exists) {
           assetSnap = cand;
           assetDocId = cand.id;
@@ -95,9 +118,12 @@ class _TechnicianServiceDetailPageState
         final data = assetSnap.data() as Map<String, dynamic>;
         setState(() {
           _itemData['assetDocId'] = assetDocId ?? assetSnap!.id;
-          _itemData['assetId'] = _itemData['assetId'] ?? data['id'] ?? data['assetId'];
-          _itemData['assetName'] = _itemData['assetName'] ?? data['name'] ?? data['assetName'];
-          _itemData['serialNumber'] = _itemData['serialNumber'] ?? data['serialNumber'];
+          _itemData['assetId'] =
+              _itemData['assetId'] ?? data['id'] ?? data['assetId'];
+          _itemData['assetName'] =
+              _itemData['assetName'] ?? data['name'] ?? data['assetName'];
+          _itemData['serialNumber'] =
+              _itemData['serialNumber'] ?? data['serialNumber'];
           _itemData['brand'] = _itemData['brand'] ?? data['brand'];
           _itemData['category'] = _itemData['category'] ?? data['category'];
           _itemData['location'] = _itemData['location'] ?? data['location'];
@@ -121,12 +147,17 @@ class _TechnicianServiceDetailPageState
 
       if (assetDocId.isEmpty && assetIdField.isNotEmpty) {
         // try document id
-        final cand = await firestore.collection('assets').doc(assetIdField).get();
+        final cand =
+            await firestore.collection('assets').doc(assetIdField).get();
         if (cand.exists) {
           assetDocId = cand.id;
         } else {
           // try querying by 'id' field
-          final q = await firestore.collection('assets').where('id', isEqualTo: assetIdField).limit(1).get();
+          final q = await firestore
+              .collection('assets')
+              .where('id', isEqualTo: assetIdField)
+              .limit(1)
+              .get();
           if (q.docs.isNotEmpty) assetDocId = q.docs.first.id;
         }
       }
@@ -134,14 +165,18 @@ class _TechnicianServiceDetailPageState
       // NOW perform transaction with all reads first, then writes
       await firestore.runTransaction((tx) async {
         final rawServiceId = (_itemData['serviceId'] ?? '').toString();
-        final serviceIdVal = (rawServiceId.isNotEmpty && rawServiceId != assetDocId) ? rawServiceId : '';
+        final serviceIdVal =
+            (rawServiceId.isNotEmpty && rawServiceId != assetDocId)
+                ? rawServiceId
+                : '';
 
         // PHASE 1: All reads first
         DocumentSnapshot? serviceSnap;
         DocumentSnapshot? assetSnap;
 
         if (serviceIdVal.isNotEmpty) {
-          final serviceDocRef = firestore.collection('service_requests').doc(serviceIdVal);
+          final serviceDocRef =
+              firestore.collection('service_requests').doc(serviceIdVal);
           serviceSnap = await tx.get(serviceDocRef);
         }
 
@@ -168,7 +203,8 @@ class _TechnicianServiceDetailPageState
 
           // If there was no service request, create one so item shows in Fixed tab
           if (serviceIdVal.isEmpty) {
-            final newServiceRef = firestore.collection('service_requests').doc();
+            final newServiceRef =
+                firestore.collection('service_requests').doc();
             final assetMap = assetSnap.data() as Map<String, dynamic>;
             tx.set(newServiceRef, {
               'assetDocId': assetDocId,
@@ -189,7 +225,13 @@ class _TechnicianServiceDetailPageState
         final resolvedAssetId = (_itemData['assetId'] ?? '').toString();
 
         // candidate field names to search for the asset reference
-        final assetFields = ['assetDocId', 'asset_doc_id', 'assetId', 'asset_id', 'asset'];
+        final assetFields = [
+          'assetDocId',
+          'asset_doc_id',
+          'assetId',
+          'asset_id',
+          'asset'
+        ];
 
         for (final field in assetFields) {
           try {
@@ -199,7 +241,8 @@ class _TechnicianServiceDetailPageState
                   .where(field, isEqualTo: resolvedAssetDocId)
                   .get();
               for (final d in q.docs) {
-                await d.reference.update({'status': 'Fixed', 'fixedAt': Timestamp.now()});
+                await d.reference
+                    .update({'status': 'Fixed', 'fixedAt': Timestamp.now()});
               }
             }
           } catch (_) {
@@ -213,7 +256,8 @@ class _TechnicianServiceDetailPageState
                   .where(field, isEqualTo: resolvedAssetId)
                   .get();
               for (final d in q2.docs) {
-                await d.reference.update({'status': 'Fixed', 'fixedAt': Timestamp.now()});
+                await d.reference
+                    .update({'status': 'Fixed', 'fixedAt': Timestamp.now()});
               }
             }
           } catch (_) {
@@ -244,7 +288,10 @@ class _TechnicianServiceDetailPageState
           }
         } else if (resolvedAssetId.isNotEmpty) {
           try {
-            final q = await assetsCol.where('id', isEqualTo: resolvedAssetId).limit(1).get();
+            final q = await assetsCol
+                .where('id', isEqualTo: resolvedAssetId)
+                .limit(1)
+                .get();
             if (q.docs.isNotEmpty) {
               await q.docs.first.reference.update({
                 'status': 'In Stock',
@@ -365,6 +412,8 @@ class _TechnicianServiceDetailPageState
                     ),
                     const Divider(),
                     _infoRow("Service ID", _itemData['serviceId']),
+                    _infoRow("User",
+                        _itemData['userName'] ?? _itemData['userId'] ?? '-'),
                     _infoRow("Issue / Damage", _itemData['damage']),
                     _infoRow("Status", _itemData['status']),
                     _infoRow("Fixed At", fixedAtFormatted),
@@ -416,7 +465,8 @@ class _TechnicianServiceDetailPageState
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                                      valueColor:
+                                          AlwaysStoppedAnimation(Colors.white),
                                     ),
                                   ),
                                   SizedBox(width: 12),
@@ -459,14 +509,15 @@ class _TechnicianServiceDetailPageState
             child: Text(
               label,
               style: const TextStyle(
-                  fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
+                  fontSize: 13,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500),
             ),
           ),
           Expanded(
             child: Text(
               value?.toString() ?? '-',
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -480,5 +531,3 @@ class _TechnicianServiceDetailPageState
     super.dispose();
   }
 }
-
-
