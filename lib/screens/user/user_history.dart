@@ -24,7 +24,7 @@ Color _getStatusColor(String status) {
     case "RETURNED":
     case "Returned":
       return Colors.green.shade600;
-    case "Ongoing":
+    case "ONGOING":
     case "In Use":
     case "Overdue":
     case "BORROWED":
@@ -75,7 +75,7 @@ class _UserHistoryPageState extends State<UserHistoryPage>
 
     Stream<List<Asset>> assetStream;
 
-    if (statusFilter == 'Ongoing') {
+    if (statusFilter == 'ONGOING') {
       // Ongoing stays the same (looking at currently borrowed assets)
       assetStream = _firestoreService.getBorrowedAssets(userId);
     } else {
@@ -203,7 +203,7 @@ class _UserHistoryPageState extends State<UserHistoryPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildAssetList(context, 'Ongoing'),
+          _buildAssetList(context, 'ONGOING'),
           _buildAssetList(context, 'RETURNED'),
           _buildAssetList(context, 'DECLINED'),
         ],
@@ -221,7 +221,7 @@ class _AssetListItem extends StatelessWidget {
 
   // Helper to format the date range
   String _formatDateRange(Asset asset) {
-    if (asset.status == 'Ongoing' || asset.status == 'BORROWED') {
+    if (asset.status == 'ONGOING' || asset.status == 'BORROWED') {
       final start = asset.borrowDate != null
           ? DateFormat('dd MMM yyyy').format(asset.borrowDate!)
           : 'N/A';
@@ -256,7 +256,7 @@ class _AssetListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Convert 'BORROWED' status from database to 'Ongoing' for UI display
-    final displayStatus = asset.status == 'BORROWED' ? 'Ongoing' : asset.status;
+    final displayStatus = asset.status == 'BORROWED' ? 'ONGOING' : asset.status;
     final statusColor = _getStatusColor(displayStatus);
 
     return Container(
