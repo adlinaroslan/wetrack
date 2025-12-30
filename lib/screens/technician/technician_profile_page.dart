@@ -55,16 +55,13 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
     _user = _auth.currentUser;
 
     if (_user != null) {
-      final doc =
-          await _firestore.collection('users').doc(_user!.uid).get();
+      final doc = await _firestore.collection('users').doc(_user!.uid).get();
 
       _userData = doc.exists ? doc.data() : null;
 
-      _nameCtrl.text =
-          _userData?['displayName'] ?? _user!.displayName ?? '';
+      _nameCtrl.text = _userData?['displayName'] ?? _user!.displayName ?? '';
       _phoneCtrl.text = _userData?['phone'] ?? '';
-      _deptCtrl.text =
-          _userData?['department'] ?? _userData?['role'] ?? '';
+      _deptCtrl.text = _userData?['department'] ?? _userData?['role'] ?? '';
       _photoUrl = _userData?['photoUrl'] ?? _user?.photoURL;
     }
 
@@ -93,10 +90,8 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
   Future<String?> _uploadProfileImage(File file) async {
     if (_user == null) return null;
     try {
-      final ref = _storage
-          .ref()
-          .child('profile_pics')
-          .child('${_user!.uid}.jpg');
+      final ref =
+          _storage.ref().child('profile_pics').child('${_user!.uid}.jpg');
 
       await ref.putFile(file);
 
@@ -121,8 +116,7 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
       String? photoUrl = _photoUrl;
 
       if (_newImageFile != null) {
-        final uploaded =
-            await _uploadProfileImage(_newImageFile!);
+        final uploaded = await _uploadProfileImage(_newImageFile!);
         if (uploaded != null) photoUrl = uploaded;
       }
 
@@ -196,8 +190,7 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios,
-                        color: Colors.white),
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Expanded(
@@ -210,16 +203,6 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.message,
-                        color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications,
-                        color: Colors.white),
-                    onPressed: () {},
                   ),
                   IconButton(
                     icon: Icon(
@@ -281,17 +264,13 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
                           radius: 60,
                           backgroundColor: Colors.grey[200],
                           backgroundImage: _newImageFile != null
-                              ? FileImage(_newImageFile!)
-                                  as ImageProvider
-                              : (_photoUrl != null &&
-                                      _photoUrl!.isNotEmpty)
+                              ? FileImage(_newImageFile!) as ImageProvider
+                              : (_photoUrl != null && _photoUrl!.isNotEmpty)
                                   ? NetworkImage(_photoUrl!)
                                   : null,
-                          child: (_photoUrl == null &&
-                                  _newImageFile == null)
+                          child: (_photoUrl == null && _newImageFile == null)
                               ? const Icon(Icons.person,
-                                  size: 60,
-                                  color: Color(0xFF00A7A7))
+                                  size: 60, color: Color(0xFF00A7A7))
                               : null,
                         ),
                       ),
@@ -347,8 +326,7 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
                           _loadUser();
                         });
                       },
-                      icon: const Icon(Icons.close,
-                          color: Colors.grey),
+                      icon: const Icon(Icons.close, color: Colors.grey),
                       label: const Text(
                         'Cancel Editing',
                         style: TextStyle(color: Colors.grey),
@@ -389,8 +367,7 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
               selectedItemColor: Colors.white,
               unselectedItemColor: Colors.white,
               items: const [
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
                 BottomNavigationBarItem(
@@ -423,8 +400,7 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
   }) {
     return Card(
       elevation: 2,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         leading: Container(
@@ -436,8 +412,7 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
           child: Icon(icon, color: const Color(0xFF00A7A7)),
         ),
         title: Text(title,
-            style:
-                const TextStyle(fontSize: 14, color: Colors.grey)),
+            style: const TextStyle(fontSize: 14, color: Colors.grey)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4.0),
           child: isEditing && controller != null
@@ -445,11 +420,9 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
                   controller: controller,
                   decoration: const InputDecoration(
                     isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
                     border: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                          color: Color(0xFF00A7A7)),
+                      borderSide: BorderSide(color: Color(0xFF00A7A7)),
                     ),
                   ),
                   style: const TextStyle(
@@ -458,13 +431,8 @@ class _TechnicianProfilePageState extends State<TechnicianProfilePage> {
                       color: Color(0xFF004C5C)),
                 )
               : Text(
-                  (controller != null
-                          ? controller.text
-                          : textValue)!
-                          .isNotEmpty
-                      ? (controller != null
-                          ? controller.text
-                          : textValue!)
+                  (controller != null ? controller.text : textValue)!.isNotEmpty
+                      ? (controller != null ? controller.text : textValue!)
                       : fallbackText,
                   style: const TextStyle(
                       fontSize: 16,

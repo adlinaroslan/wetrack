@@ -55,8 +55,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       final doc = await _firestore.collection('users').doc(_user!.uid).get();
       _userData = doc.exists ? doc.data() : null;
 
-      _nameCtrl.text =
-          _userData?['displayName'] ?? _user!.displayName ?? '';
+      _nameCtrl.text = _userData?['displayName'] ?? _user!.displayName ?? '';
       _phoneCtrl.text = _userData?['phone'] ?? '';
       _deptCtrl.text = _userData?['department'] ?? _userData?['role'] ?? '';
       _photoUrl = _userData?['photoUrl'] ?? _user?.photoURL;
@@ -160,7 +159,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF9F9),
-
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
         child: Container(
@@ -195,16 +193,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.message, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.person,
-                        color: Color(0xFFEFF9F9)),
+                    icon: const Icon(Icons.person, color: Color(0xFFEFF9F9)),
                     onPressed: () {},
                   ),
                 ],
@@ -213,7 +202,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
           ),
         ),
       ),
-
       floatingActionButton: _loading
           ? null
           : FloatingActionButton(
@@ -230,7 +218,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                 color: Colors.white,
               ),
             ),
-
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -238,7 +225,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-
                   Stack(
                     alignment: Alignment.bottomRight,
                     children: [
@@ -263,8 +249,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                               : (_photoUrl != null && _photoUrl!.isNotEmpty)
                                   ? NetworkImage(_photoUrl!)
                                   : null,
-                          child: (_photoUrl == null &&
-                                  _newImageFile == null)
+                          child: (_photoUrl == null && _newImageFile == null)
                               ? const Icon(Icons.person,
                                   size: 60, color: Color(0xFF00A7A7))
                               : null,
@@ -283,9 +268,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         ),
                     ],
                   ),
-
                   const SizedBox(height: 30),
-
                   _buildInfoTile(
                     icon: Icons.person_outline,
                     title: 'Name',
@@ -293,14 +276,12 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     controller: _nameCtrl,
                     fallbackText: '—',
                   ),
-
                   _buildInfoTile(
                     icon: Icons.email_outlined,
                     title: 'Email',
                     isEditing: false,
                     textValue: _user?.email ?? '—',
                   ),
-
                   _buildInfoTile(
                     icon: Icons.phone_outlined,
                     title: 'Phone',
@@ -308,7 +289,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     controller: _phoneCtrl,
                     fallbackText: '—',
                   ),
-
                   _buildInfoTile(
                     icon: Icons.business_outlined,
                     title: 'Department/Role',
@@ -316,9 +296,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     controller: _deptCtrl,
                     fallbackText: '—',
                   ),
-
                   const SizedBox(height: 24),
-
                   if (_editing)
                     TextButton.icon(
                       onPressed: () {
@@ -328,19 +306,16 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                           _loadUser();
                         });
                       },
-                      icon:
-                          const Icon(Icons.close, color: Colors.grey),
+                      icon: const Icon(Icons.close, color: Colors.grey),
                       label: const Text(
                         'Cancel Editing',
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),
-
                   const SizedBox(height: 80),
                 ],
               ),
             ),
-
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -370,8 +345,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               selectedItemColor: Colors.white,
               unselectedItemColor: Colors.white,
               items: const [
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
                 BottomNavigationBarItem(
@@ -403,8 +377,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   }) {
     return Card(
       elevation: 2,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         leading: Container(
@@ -426,11 +399,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                   controller: controller,
                   decoration: const InputDecoration(
                     isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
                     border: UnderlineInputBorder(
-                      borderSide:
-                          BorderSide(color: Color(0xFF00A7A7)),
+                      borderSide: BorderSide(color: Color(0xFF00A7A7)),
                     ),
                   ),
                   style: const TextStyle(
@@ -440,9 +411,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                   ),
                 )
               : Text(
-                  (controller != null
-                          ? controller.text
-                          : textValue) ??
+                  (controller != null ? controller.text : textValue) ??
                       fallbackText,
                   style: const TextStyle(
                     fontSize: 16,

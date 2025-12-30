@@ -78,12 +78,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {
-              // Add AdminNotificationPage if exists
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -98,6 +92,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   builder: (context) => const ChatListPage()));
             },
             icon: const Icon(Icons.message_outlined, color: Colors.white),
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_outline, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminProfilePage()),
+              );
+            },
           ),
         ],
       ),
@@ -189,12 +192,16 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
                       for (var d in services) {
                         final sd = d.data() as Map<String, dynamic>;
-                        final status = (sd['status'] ?? '').toString().toLowerCase();
-                        String key = (sd['assetDocId'] ?? sd['assetId'] ?? '').toString();
+                        final status =
+                            (sd['status'] ?? '').toString().toLowerCase();
+                        String key = (sd['assetDocId'] ?? sd['assetId'] ?? '')
+                            .toString();
                         if (key.isEmpty) key = d.id;
 
-                        if (status.contains('pending')) pendingSet.add(key);
-                        else if (status.contains('approved') || status.contains('completed')) approvedSet.add(key);
+                        if (status.contains('pending'))
+                          pendingSet.add(key);
+                        else if (status.contains('approved') ||
+                            status.contains('completed')) approvedSet.add(key);
                       }
 
                       for (var a in assetSnap.data!.docs) {
@@ -205,13 +212,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       return Row(
                         children: [
                           _summaryCard("Total Assets", totalAssets,
-                              Icons.devices, Color(0xFF00A7A7)),
-                          _summaryCard("Pending", pending,
-                              Icons.pending_actions, Color(0xFF00A7A7)),
-                          _summaryCard("Approved", approved, Icons.check_circle,
-                              Color(0xFF00A7A7)),
-                          _summaryCard("In Use", inUse, Icons.computer,
-                              Color(0xFF00A7A7)),
+                              Icons.devices, const Color(0xFF00A7A7)),
+                          _summaryCard("Pending", pendingSet.length,
+                              Icons.pending_actions, const Color(0xFF00A7A7)),
+                          _summaryCard("Approved", approvedSet.length,
+                              Icons.check_circle, const Color(0xFF00A7A7)),
+                          _summaryCard("In Use", inUseSet.length,
+                              Icons.computer, const Color(0xFF00A7A7)),
                         ],
                       );
                     },
@@ -241,28 +248,35 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     return const Text("No recent assets available.");
                   }
                   return Column(
-                    children: snap.data!.docs.map((doc) {
+                    children: snapshot.data!.docs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
                       final assetId = data['assetId'] ?? data['asset'] ?? '';
-                      final action = (data['action'] ?? data['type'] ?? 'Activity').toString();
+                      final action =
+                          (data['action'] ?? data['type'] ?? 'Activity')
+                              .toString();
                       final date = _parseDate(data) ?? DateTime.now();
                       final formattedDate =
                           "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
 
                       return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance.collection('assets').doc(assetId.toString()).get(),
+                        future: FirebaseFirestore.instance
+                            .collection('assets')
+                            .doc(assetId.toString())
+                            .get(),
                         builder: (context, assetSnap) {
                           String name = assetId.toString();
                           String status = 'UNKNOWN';
                           if (assetSnap.hasData && assetSnap.data!.exists) {
-                            final a = assetSnap.data!.data() as Map<String, dynamic>;
+                            final a =
+                                assetSnap.data!.data() as Map<String, dynamic>;
                             name = a['name'] ?? assetId;
                             status = a['status'] ?? 'UNKNOWN';
                           }
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             child: Padding(
                               padding: const EdgeInsets.all(12),
                               child: Row(
@@ -270,7 +284,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           name,
@@ -282,20 +297,25 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                         const SizedBox(height: 4),
                                         Text(
                                           "ID: $assetId",
-                                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                          style: const TextStyle(
+                                              color: Colors.grey, fontSize: 12),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           formattedDate,
-                                          style: const TextStyle(color: Colors.black54, fontSize: 12),
+                                          style: const TextStyle(
+                                              color: Colors.black54,
+                                              fontSize: 12),
                                         ),
                                       ],
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: _assetStatusColor(status).withOpacity(0.15),
+                                      color: _assetStatusColor(status)
+                                          .withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
@@ -331,7 +351,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   DropdownButton<String>(
                     value: _selectedYear,
                     items: List.generate(5, (i) => DateTime.now().year - i)
-                        .map((y) => DropdownMenuItem(value: y.toString(), child: Text(y.toString())))
+                        .map((y) => DropdownMenuItem(
+                            value: y.toString(), child: Text(y.toString())))
                         .toList(),
                     onChanged: (v) {
                       if (v != null) setState(() => _selectedYear = v);
@@ -429,7 +450,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   /// ---------- FEATURE CARD ----------
-  Widget _featureCard({required IconData icon, required String title, required VoidCallback onTap}) {
+  Widget _featureCard(
+      {required IconData icon,
+      required String title,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Column(

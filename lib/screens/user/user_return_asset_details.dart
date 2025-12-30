@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:wetrack/services/firestore_service.dart';
 import 'user_return_asset.dart';
 import 'user_notification.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserReturnAssetDetailsPage extends StatefulWidget {
   final String assetName;
@@ -320,6 +322,8 @@ class _UserReturnAssetDetailsPageState
     );
   }
 
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+
   Future<void> _submitReturn(BuildContext context) async {
     setState(() => _isProcessing = true);
     try {
@@ -328,6 +332,37 @@ class _UserReturnAssetDetailsPageState
         condition: selectedCondition!,
         comments: commentController.text,
       );
+      if (selectedCondition == "Minor Damage" ||
+          selectedCondition == "Major Damage") {
+        final docRef = await FirebaseFirestore.instance
+            .collection('service_requests')
+            .add({
+          'assetDocId': widget.assetId,
+          'assetId': widget.assetId,
+          'assetName': widget.assetName,
+          'serialNumber': widget.serialNumber,
+          'category': widget.category,
+          'location': widget.location,
+          'damage': commentController.text.isNotEmpty
+              ? commentController.text
+              : selectedCondition,
+          'status': 'On Progress',
+          'createdAt': Timestamp.now(),
+          'userId': currentUser?.uid,
+          'userName': currentUser?.displayName ?? 'Unknown User',
+        });
+
+        // 🔔 Notify Technicians
+        await FirestoreService().sendRoleNotification(
+          role: 'Technician',
+          title: "Asset Returned with Damage ⚠️",
+          message:
+              "Asset **${widget.assetName}** was returned with condition: $selectedCondition.",
+          type: 'asset_damage',
+          relatedId: docRef.id,
+        );
+      }
+
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
           context,
