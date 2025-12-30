@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildAppBar(context),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   _buildIconRow(context),
                   const SizedBox(height: 20), // Reduced gap slightly
 
@@ -132,76 +132,103 @@ class _HomePageState extends State<HomePage> {
 
   // 🟣 APP BAR
   Widget _buildAppBar(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = user?.displayName ?? "User";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "WeTrack.",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 35,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
+            // Left side: App title
+            const Text(
+              "WeTrack.",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 35,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            // Right side: icons
+            Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.message, color: Colors.white),
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ChatListPage()),
-                    );
-                    setState(() => unreadCount = 0);
-                  },
-                ),
-                if (unreadCount > 0)
-                  Positioned(
-                    right: 6,
-                    top: 6,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      constraints:
-                          const BoxConstraints(minWidth: 16, minHeight: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          unreadCount > 99 ? '99+' : unreadCount.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.message, color: Colors.white),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ChatListPage()),
+                        );
+                        setState(() => unreadCount = 0);
+                      },
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          constraints:
+                              const BoxConstraints(minWidth: 16, minHeight: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              unreadCount > 99 ? '99+' : unreadCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const UserNotificationPage()),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.person, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const UserProfilePage()),
+                    );
+                  },
+                ),
               ],
             ),
-            IconButton(
-              icon: const Icon(Icons.notifications, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const UserNotificationPage()));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.person, color: Colors.white),
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const UserProfilePage()));
-              },
-            ),
           ],
+        ),
+
+        const SizedBox(height: 8),
+
+        // 👋 Greeting line
+        Text(
+          "   Hi, $displayName !",
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:wetrack/models/asset_model.dart';
-import 'user_return_asset_details.dart'; // Ensure this import is correct
+import 'user_return_asset_details.dart';
 import 'package:wetrack/services/asset_image_helper.dart';
 
 class UserReturnAssetPage extends StatefulWidget {
@@ -14,7 +14,7 @@ class UserReturnAssetPage extends StatefulWidget {
 
 class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
   final Set<String> _selectedAssetIds = {};
-  String _searchQuery = ''; // New state for search query
+  String _searchQuery = '';
 
   static const LinearGradient mainGradient = LinearGradient(
     colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
@@ -27,7 +27,6 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
     return dueDate.isBefore(DateTime.now());
   }
 
-  // NOTE: This function is now only called when the checkbox itself is tapped.
   void _toggleSelection(String assetId) {
     setState(() {
       if (_selectedAssetIds.contains(assetId)) {
@@ -38,7 +37,6 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
     });
   }
 
-  // New function to handle navigation to the details page
   void _goToDetailsPage(Asset asset) {
     Navigator.push(
       context,
@@ -48,7 +46,6 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
           assetId: asset.docId,
           category: asset.category,
           location: asset.location,
-          // Assuming 'In Use' or 'Overdue' is the status you want to pass
           status: _isOverdue(asset.dueDateTime) ? 'Overdue' : 'In Use',
           imagePath: _getImagePath(asset.name),
           serialNumber: asset.serialNumber,
@@ -58,22 +55,51 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
     );
   }
 
-  void _processReturn() {
-    // This function should be implemented to handle the actual return logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text("Processing ${_selectedAssetIds.length} returns...")),
-    );
-    // After processing, clear selection
+  /// ✅ Updated: process each selected asset one by one
+  void _processReturn() async {
+    if (_selectedAssetIds.isEmpty) return;
+
+    final selectedIds = List<String>.from(_selectedAssetIds);
+
+    // Clear selection immediately
     setState(() {
       _selectedAssetIds.clear();
     });
+
+    for (final assetId in selectedIds) {
+      final doc = await FirebaseFirestore.instance
+          .collection('assets')
+          .doc(assetId)
+          .get();
+
+      final asset = Asset.fromFirestore(doc);
+
+      // Navigate to details page and wait until user returns
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UserReturnAssetDetailsPage(
+            assetName: asset.name,
+            assetId: asset.docId,
+            category: asset.category,
+            location: asset.location,
+            status: _isOverdue(asset.dueDateTime) ? 'Overdue' : 'In Use',
+            imagePath: _getImagePath(asset.name),
+            serialNumber: asset.serialNumber,
+            dueDateTime: asset.dueDateTime,
+          ),
+        ),
+      );
+    }
+
+    // Optional: show summary after all assets processed
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Processed ${selectedIds.length} returns.")),
+    );
   }
 
   List<Asset> _filterAssets(List<Asset> assets) {
-    if (_searchQuery.isEmpty) {
-      return assets;
-    }
+    if (_searchQuery.isEmpty) return assets;
     final query = _searchQuery.toLowerCase();
     return assets.where((asset) {
       return asset.name.toLowerCase().contains(query) ||
