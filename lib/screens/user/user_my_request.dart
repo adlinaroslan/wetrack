@@ -1,17 +1,14 @@
-// lib/pages/user/user_my_request_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:wetrack/services/firestore_service.dart';
 import '../../models/request_model.dart';
+import 'user_request_edit.dart';
 
 class UserMyRequestPage extends StatelessWidget {
   const UserMyRequestPage({super.key});
 
-  // Helper function returning proper label + color
   Map<String, dynamic> _getStatusVisuals(String status) {
     final normalized = status.toUpperCase();
-
     switch (normalized) {
       case 'APPROVED':
         return {
@@ -47,8 +44,6 @@ class UserMyRequestPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFF9F9),
-
-      // ------------------- APP BAR -------------------
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
         child: Container(
@@ -86,8 +81,6 @@ class UserMyRequestPage extends StatelessWidget {
           ),
         ),
       ),
-
-      // ------------------- BODY -------------------
       body: currentUserId == null
           ? const Center(child: Text("User not logged in."))
           : StreamBuilder<List<AssetRequest>>(
@@ -98,9 +91,7 @@ class UserMyRequestPage extends StatelessWidget {
                 }
 
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Text("Error fetching requests: ${snapshot.error}"),
-                  );
+                  return Center(child: Text("Error: ${snapshot.error}"));
                 }
 
                 final requests = snapshot.data ?? [];
@@ -113,10 +104,8 @@ class UserMyRequestPage extends StatelessWidget {
                         Icon(Icons.inventory_2_outlined,
                             size: 60, color: Colors.grey),
                         SizedBox(height: 10),
-                        Text(
-                          "You have no pending asset requests.",
-                          style: TextStyle(color: Colors.grey),
-                        ),
+                        Text("You have no asset requests.",
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   );
@@ -130,7 +119,6 @@ class UserMyRequestPage extends StatelessWidget {
                     final visuals = _getStatusVisuals(request.status);
                     final normalizedStatus = visuals['normalized'];
 
-                    // Pick icon based on status
                     IconData icon;
                     if (normalizedStatus == 'APPROVED' ||
                         normalizedStatus == 'COMPLETED') {
@@ -141,64 +129,82 @@ class UserMyRequestPage extends StatelessWidget {
                       icon = Icons.access_time;
                     }
 
+                    // 2. Wrap the Card in an InkWell for tap functionality
                     return Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 16,
-                        ),
-                        leading: CircleAvatar(
-                          backgroundColor: visuals['color'].withOpacity(0.1),
-                          child: Icon(
-                            icon,
-                            color: visuals['color'],
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        // 3. Navigate only if status is PENDING
+                        onTap: normalizedStatus == 'PENDING'
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        UserRequestEditPage(request: request),
+                                  ),
+                                );
+                              }
+                            : null, // Disable tap for non-pending requests
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 16),
+                          leading: CircleAvatar(
+                            backgroundColor: visuals['color'].withOpacity(0.1),
+                            child: Icon(icon, color: visuals['color']),
                           ),
-                        ),
-                        title: Text(
-                          request.assetName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF004C5C),
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-
-                            // Show due date ONLY if approved
-                            if (normalizedStatus == 'APPROVED' &&
-                                request.dueDateTime != null)
-                              Text(
-                                'Due Date: ${request.dueDateTime!.toDate().toLocal().toString().split(' ')[0]}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  request.assetName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF004C5C),
+                                  ),
                                 ),
                               ),
-
-                            Text(
-                                'Required by: ${request.requiredDate.toLocal().toString().split(' ')[0]}'),
-                            Text(
-                                'Requested on: ${request.requestedDate.toLocal().toString().split(' ')[0]}'),
-                          ],
-                        ),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: visuals['color'].withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
+                              // 4. Show an edit icon if it's pending to hint it's clickable
+                              if (normalizedStatus == 'PENDING')
+                                const Icon(Icons.edit,
+                                    size: 16, color: Colors.grey),
+                            ],
                           ),
-                          child: Text(
-                            visuals['text'],
-                            style: TextStyle(
-                              color: visuals['color'],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              if (normalizedStatus == 'APPROVED' &&
+                                  request.dueDateTime != null)
+                                Text(
+                                  'Due Date: ${request.dueDateTime!.toDate().toLocal().toString().split(' ')[0]}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87),
+                                ),
+                              Text(
+                                  'Required by: ${request.requiredDate.toLocal().toString().split(' ')[0]}'),
+                              Text(
+                                  'Requested on: ${request.requestedDate.toLocal().toString().split(' ')[0]}'),
+                            ],
+                          ),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: visuals['color'].withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              visuals['text'],
+                              style: TextStyle(
+                                color: visuals['color'],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),

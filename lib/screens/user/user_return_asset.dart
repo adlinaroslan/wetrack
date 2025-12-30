@@ -51,6 +51,8 @@ class _UserReturnAssetPageState extends State<UserReturnAssetPage> {
           // Assuming 'In Use' or 'Overdue' is the status you want to pass
           status: _isOverdue(asset.dueDateTime) ? 'Overdue' : 'In Use',
           imagePath: _getImagePath(asset.name),
+          serialNumber: asset.serialNumber,
+          dueDateTime: asset.dueDateTime,
         ),
       ),
     );

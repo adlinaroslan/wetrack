@@ -1,7 +1,7 @@
 // Shared helper to resolve asset image paths by name/brand
 String getAssetImagePath(String assetName) {
   if (assetName.isEmpty) return '';
-  final name = assetName.toLowerCase();
+  final name = assetName.toLowerCase().trim();
 
   final Map<String, String> imageOptions = {
     'laminator': 'assets/images/laminator.png',
@@ -18,7 +18,7 @@ String getAssetImagePath(String assetName) {
     'vga': 'assets/images/VGA.jpg',
     'ugreen adapter': 'assets/images/ugreen adapter.jpg',
     'microphone stand': 'assets/images/mic stand.png',
-    'raspberry pi 4b': 'assets/images/RASPBERRY PI 4B.jpg',
+    'raspberry pi 4': 'assets/images/RASPBERRY PI 4B.jpg',
     'hyperx': 'assets/images/hyperx.jpg',
     'dell': 'assets/images/dell.jpg',
     'extension': 'assets/images/extension.png',
@@ -32,6 +32,10 @@ String getAssetImagePath(String assetName) {
     'mouse': 'assets/images/mouse.png',
     'projector.png': 'assets/images/projector.png',
   };
+
+  if (imageOptions.containsKey(name)) {
+    return imageOptions[name]!;
+  }
 
   for (final entry in imageOptions.entries) {
     if (name.contains(entry.key)) return entry.value;

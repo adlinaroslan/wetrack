@@ -491,7 +491,7 @@ class _UserRequestAssetPageState extends State<UserRequestAssetPage> {
     }
 
     // If still empty, show Icon
-    if (imagePath == null || imagePath.isEmpty) {
+    if (imagePath.isEmpty) {
       return Icon(
         _getCategoryIcon(widget.asset.category),
         color: const Color(0xFF004C5C),

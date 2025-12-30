@@ -242,6 +242,8 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
                   location: asset.location,
                   status: asset.status,
                   imagePath: getAssetImagePath(asset.name),
+                  serialNumber: asset.serialNumber,
+                  dueDateTime: asset.dueDateTime,
                 ),
               ),
             );
@@ -329,9 +331,5 @@ class _UserAssetInUsePageState extends State<UserAssetInUsePage> {
         ),
       ),
     );
-  }
-
-  String _getImagePath(String assetName) {
-    return getAssetImagePath(assetName);
   }
 }

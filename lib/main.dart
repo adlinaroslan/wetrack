@@ -7,6 +7,8 @@ import 'package:wetrack/screens/user/user_list_asset.dart';
 import 'package:wetrack/screens/user/user_notification.dart';
 import 'package:wetrack/screens/user/logout_page.dart';
 import 'package:wetrack/screens/user/user_scan_qr_page.dart';
+import 'package:wetrack/services/firestore_service.dart';
+import 'package:wetrack/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +17,11 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    await NotificationService.init();
+
+    // Run migration to fix missing borrowDates on app startup
+    final firestoreService = FirestoreService();
+    await firestoreService.fixMissingBorrowDates();
   } catch (e) {
     if (!e.toString().contains('duplicate')) {
       rethrow;
