@@ -17,6 +17,15 @@ class _AssetListPageState extends State<AssetListPage> {
   String searchQuery = '';
   String? selectedCategory;
 
+  final List<String> categories = const [
+    "All",
+    "Monitor",
+    "Desktop",
+    "Machine",
+    "Tools",
+    "IT-Accessories",
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,18 +55,20 @@ class _AssetListPageState extends State<AssetListPage> {
           ),
         ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /// SEARCH + FILTER
+            /// ================= SEARCH + ADD BUTTON =================
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: "Search Asset",
-                      prefixIcon: const Icon(Icons.search),
+                      hintText: "Search Asset Name or ID",
+                      prefixIcon:
+                          const Icon(Icons.search, color: Color(0xFF00A7A7)),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -70,42 +81,61 @@ class _AssetListPageState extends State<AssetListPage> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.filter_list),
-                  onSelected: (value) {
-                    setState(() {
-                      selectedCategory = value == "All" ? null : value;
-                    });
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: "All", child: Text("All")),
-                    PopupMenuItem(value: "Monitor", child: Text("Monitor")),
-                    PopupMenuItem(value: "Desktop", child: Text("Desktop")),
-                    PopupMenuItem(value: "Machine", child: Text("Machine")),
-                    PopupMenuItem(value: "Tools", child: Text("Tools")),
-                    PopupMenuItem(
-                        value: "IT-Accessories",
-                        child: Text("IT-Accessories")),
-                  ],
+
+                /// ADD NEW ASSET BUTTON (RIGHT BESIDE SEARCH)
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00A7A7),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add),
+                    label: const Text("Add"),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddAssetPage(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00A7A7),
-                  foregroundColor: Colors.white,
-                ),
-                icon: const Icon(Icons.add),
-                label: const Text("Add New Asset"),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddAssetPage()),
+            /// ================= CATEGORY FILTER (LIKE USER PAGE) =================
+            SizedBox(
+              height: 40,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final cat = categories[index];
+                  final isSelected =
+                      (selectedCategory == null && cat == "All") ||
+                          selectedCategory == cat;
+
+                  return ChoiceChip(
+                    label: Text(cat),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF00A7A7),
+                    backgroundColor: Colors.white,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black87,
+                    ),
+                    onSelected: (_) {
+                      setState(() {
+                        selectedCategory = cat == "All" ? null : cat;
+                      });
+                    },
                   );
                 },
               ),
@@ -113,13 +143,13 @@ class _AssetListPageState extends State<AssetListPage> {
 
             const SizedBox(height: 16),
 
-            /// FIRESTORE GRID
+            /// ================= FIRESTORE GRID =================
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('assets')
                     .orderBy('id')
-                    .snapshots(), // fetch all assets
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -131,8 +161,7 @@ class _AssetListPageState extends State<AssetListPage> {
 
                   final assets = snapshot.data!.docs
                       .map((doc) => Asset.fromFirestore(doc))
-                      .where((asset) =>
-                          asset.status != 'DISPOSED') // filter disposed here
+                      .where((asset) => asset.status != 'DISPOSED')
                       .where((asset) {
                         final matchesSearch =
                             asset.name
@@ -170,7 +199,8 @@ class _AssetListPageState extends State<AssetListPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => AssetDetailPage(asset: asset),
+                              builder: (_) =>
+                                  AssetDetailPage(asset: asset),
                             ),
                           );
                         },
@@ -197,10 +227,12 @@ class _AssetListPageState extends State<AssetListPage> {
                                       asset.name,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
+                                      textAlign: TextAlign.center,
                                     ),
                                     Text(
                                       asset.id,
-                                      style: const TextStyle(fontSize: 11),
+                                      style:
+                                          const TextStyle(fontSize: 11),
                                     ),
                                   ],
                                 ),
@@ -217,6 +249,7 @@ class _AssetListPageState extends State<AssetListPage> {
           ],
         ),
       ),
+
       bottomNavigationBar: const FooterNav(),
     );
   }

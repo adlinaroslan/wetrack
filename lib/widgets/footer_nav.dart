@@ -7,13 +7,12 @@ import '../screens/technician/technician_scan_page.dart' as tech_scan;
 import '../screens/technician/logout_page.dart' as tech_logout;
 import '../screens/administrator/logout_page.dart' as admin_logout;
 
-// Define the project's recurring gradient for use in the footer
+// ✅ Project gradient (same as your example)
 const LinearGradient footerGradient = LinearGradient(
-  colors: [Color(0xFF00A7A7), Color(0xFF004C5C)], // Cyan to Dark Teal
-  begin: Alignment.centerLeft,
-  end: Alignment.centerRight,
+  colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
 );
-// ------------------------------------------
 
 class FooterNav extends StatelessWidget {
   final String role;
@@ -23,14 +22,18 @@ class FooterNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // 🟢 APPLY GRADIENT BACKGROUND
+      height: 80, // ✅ footer height
       decoration: const BoxDecoration(
         gradient: footerGradient,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(50), // ✅ rounded top corners
+          topRight: Radius.circular(50),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black38,
+            color: Colors.black26,
             blurRadius: 10,
-            offset: Offset(0, -2),
+            offset: Offset(0, -3),
           ),
         ],
       ),
@@ -48,13 +51,15 @@ class FooterNav extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const admin_home.AdminHomePage()),
+                    builder: (_) => const admin_home.AdminHomePage(),
+                  ),
                 );
               } else {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const tech_home.TechnicianHomePage()),
+                    builder: (_) => const tech_home.TechnicianHomePage(),
+                  ),
                 );
               }
             },
@@ -69,7 +74,8 @@ class FooterNav extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const tech_scan.TechnicianScanPage()),
+                    builder: (_) => const tech_scan.TechnicianScanPage(),
+                  ),
                 );
               } else {
                 Navigator.pushNamed(context, '/scanqr');
@@ -86,15 +92,17 @@ class FooterNav extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) =>
-                          admin_logout.LogoutPage(role: 'Administrator')),
+                    builder: (_) =>
+                        admin_logout.LogoutPage(role: 'Administrator'),
+                  ),
                 );
               } else {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) =>
-                          tech_logout.LogoutPage(role: 'Technician')),
+                    builder: (_) =>
+                        tech_logout.LogoutPage(role: 'Technician'),
+                  ),
                 );
               }
             },
@@ -115,10 +123,8 @@ class FooterNav extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 🟢 ICON COLOR SET TO WHITE
           Icon(icon, color: Colors.white, size: 28),
           const SizedBox(height: 4),
-          // 🟢 LABEL COLOR SET TO WHITE
           Text(
             label,
             style: const TextStyle(

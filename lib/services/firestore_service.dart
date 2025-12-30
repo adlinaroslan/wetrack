@@ -68,6 +68,42 @@ class FirestoreService {
             }).toList());
   }
 
+Future<Map<String, dynamic>?> getServiceRequestWithAsset(
+    String serviceId) async {
+  try {
+    // 1. Fetch service request
+    final serviceSnap = await serviceRequestsRef.doc(serviceId).get();
+    if (!serviceSnap.exists) return null;
+
+    final service = Map<String, dynamic>.from(serviceSnap.data()!);
+    service['serviceId'] = serviceSnap.id;
+
+    final assetId = service['assetId'];
+    if (assetId == null) return service;
+
+    // 2. Fetch asset
+    final assetSnap = await assetsRef.doc(assetId).get();
+    if (!assetSnap.exists) return service;
+
+    final asset = assetSnap.data()!;
+
+    // 3. Merge ONLY required fields
+    service['assetDocId'] = asset.docId;
+    service['assetId'] = asset.id;
+    service['assetName'] = asset.name;
+    service['serialNumber'] = asset.serialNumber;
+    service['brand'] = asset.brand;
+    service['category'] = asset.category;
+    service['location'] = asset.location;
+
+    return service;
+  } catch (e) {
+    debugPrint('Error fetching service detail: $e');
+    return null;
+  }
+}
+
+
   // ---------------------- USER PROFILE ----------------------
 
   Future<UserModel?> getUserProfile(String uid) async {

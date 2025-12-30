@@ -70,9 +70,31 @@ class _ServiceList extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
 
+              // Prefer service_request entries over raw asset entries to avoid duplicates.
+              final serviceDocs = serviceSnapshot.data!;
+              final assetDocs = assetSnapshot.data!;
+
+              // Build a set of asset identifiers already represented by service requests
+              final Set<String> serviceAssetKeys = {};
+              for (final s in serviceDocs) {
+                final key1 = (s['assetDocId'] ?? '').toString();
+                final key2 = (s['assetId'] ?? '').toString();
+                if (key1.isNotEmpty) serviceAssetKeys.add(key1);
+                if (key2.isNotEmpty) serviceAssetKeys.add(key2);
+              }
+
+              // Filter assets to exclude those already covered by a service request
+              final filteredAssets = assetDocs.where((a) {
+                final aDocId = (a['assetDocId'] ?? a['docId'] ?? '').toString();
+                final aId = (a['id'] ?? a['assetId'] ?? '').toString();
+                if (aDocId.isNotEmpty && serviceAssetKeys.contains(aDocId)) return false;
+                if (aId.isNotEmpty && serviceAssetKeys.contains(aId)) return false;
+                return true;
+              }).toList();
+
               final allDocs = [
-                ...serviceSnapshot.data!,
-                ...assetSnapshot.data!,
+                ...serviceDocs,
+                ...filteredAssets,
               ];
 
               if (allDocs.isEmpty) {
@@ -88,8 +110,7 @@ class _ServiceList extends StatelessWidget {
                       (data['assetId'] ?? data['id'] ?? '').toString();
                   final assetName =
                       (data['assetName'] ?? data['name'] ?? '').toString();
-                  final serviceId =
-                      (data['serviceId'] ?? data['assetDocId'] ?? '').toString();
+                    final serviceId = (data['serviceId'] ?? '').toString();
 
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 6),
