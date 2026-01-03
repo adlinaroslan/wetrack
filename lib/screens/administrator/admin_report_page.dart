@@ -39,6 +39,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
               final data = doc.data() as Map<String, dynamic>;
               final borrowTs = data['borrowDate'];
               final returnTs = data['returnDate'];
+              final createdTs = data['createdAt'];
 
               return Asset(
                 docId: asset.docId,
@@ -59,6 +60,9 @@ class _AdminReportPageState extends State<AdminReportPage> {
                 returnDate: returnTs != null && returnTs is Timestamp
                     ? returnTs.toDate()
                     : null,
+                createdAt: createdTs != null && createdTs is Timestamp
+                    ? createdTs.toDate()
+                    : null,
               );
             }).toList());
   }
@@ -67,37 +71,51 @@ class _AdminReportPageState extends State<AdminReportPage> {
     final pdf = pw.Document();
     final formatter = DateFormat('dd MMM yyyy');
 
-    // 🔹 Filter by registerDate instead of borrowDate
+    // 🔹 Filter by createdAt timestamp to get activities for selected month
     final filtered = assets.where((a) {
-      if (a.registerDate == null) return false;
-      try {
-        final date = DateFormat('dd MMM yyyy').parse(a.registerDate!);
-        return DateFormat('yyyy').format(date) == selectedYear &&
-               DateFormat('MMMM').format(date) == selectedMonth;
-      } catch (e) {
-        return false;
-      }
+      final timestamp = a.createdAt ?? (a.registerDate != null ? 
+          DateFormat('dd MMM yyyy').parse(a.registerDate!) : null);
+      
+      if (timestamp == null) return false;
+      
+      return DateFormat('yyyy').format(timestamp) == selectedYear &&
+             DateFormat('MMMM').format(timestamp) == selectedMonth;
     }).toList();
+
+    // 🔹 Sort by timestamp descending (newest first)
+    filtered.sort((a, b) {
+      final timeA = a.createdAt ?? (a.registerDate != null ? 
+          DateFormat('dd MMM yyyy').parse(a.registerDate!) : DateTime(2000));
+      final timeB = b.createdAt ?? (b.registerDate != null ? 
+          DateFormat('dd MMM yyyy').parse(b.registerDate!) : DateTime(2000));
+      return timeB.compareTo(timeA);
+    });
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         build: (_) => [
           pw.Text(
-            'Asset Report – $selectedMonth $selectedYear',
+            'Asset Activity Report – $selectedMonth $selectedYear',
             style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 12),
           pw.Table.fromTextArray(
-            headers: ['Asset ID', 'Name', 'Status', 'Register Date', 'Borrow Date', 'Return Date'],
-            data: filtered.map((a) => [
-              a.id,
-              a.name,
-              a.status,
-              a.registerDate ?? '-',
-              a.borrowDate != null ? formatter.format(a.borrowDate!) : '-',
-              a.returnDate != null ? formatter.format(a.returnDate!) : '-',
-            ]).toList(),
+            headers: ['Timestamp', 'Asset ID', 'Name', 'Status', 'Register Date', 'Borrow Date', 'Return Date'],
+            data: filtered.map((a) {
+              final timestamp = a.createdAt ?? (a.registerDate != null ? 
+                  DateFormat('dd MMM yyyy').parse(a.registerDate!) : null);
+              
+              return [
+                timestamp != null ? formatter.format(timestamp) : '-',
+                a.id,
+                a.name,
+                a.status,
+                a.registerDate ?? '-',
+                a.borrowDate != null ? formatter.format(a.borrowDate!) : '-',
+                a.returnDate != null ? formatter.format(a.returnDate!) : '-',
+              ];
+            }).toList(),
           ),
         ],
       ),

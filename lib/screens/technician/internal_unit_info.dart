@@ -210,7 +210,7 @@ class AssetDetailPage extends StatelessWidget {
                   .collection('assets')
                   .doc(asset.docId)
                   .update({
-                "status": "DISPOSED",
+                "status": "Disposed",
                 "location": "Disposed",
                 "disposedAt": FieldValue.serverTimestamp(),
               });

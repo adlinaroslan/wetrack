@@ -26,7 +26,7 @@ class DisposalListPage extends StatelessWidget {
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('assets')
-              .where('status', isEqualTo: 'DISPOSED') // ✅ must match exactly
+              .where('status', isEqualTo: 'Disposed') // ✅ must match exactly
               .snapshots(), // removed orderBy to avoid index issue
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -54,7 +54,7 @@ class DisposalListPage extends StatelessWidget {
                     title: Text(asset.name),
                     subtitle: Text("ID: ${asset.id} | ${asset.brand}"),
                     trailing: const Text(
-                      "DISPOSED",
+                      "Disposed",
                       style: TextStyle(
                         color: Colors.red,
                         fontWeight: FontWeight.bold,

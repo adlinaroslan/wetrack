@@ -64,7 +64,7 @@ class FirestoreService {
   CollectionReference<Map<String, dynamic>> get serviceRequestsRef =>
       _db.collection('service_requests');
 
-  /// Stream service requests filtered by status (e.g., 'On Progress', 'Fixed')
+  /// Stream service requests filtered by status (e.g., 'In Progress', 'Fixed')
   Stream<List<Map<String, dynamic>>> getServiceRequestsByStatus(String status) {
     return serviceRequestsRef
         .where('status', isEqualTo: status)

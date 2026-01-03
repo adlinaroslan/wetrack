@@ -24,6 +24,7 @@ class _AssetListPageState extends State<AssetListPage> {
     "Machine",
     "Tools",
     "IT-Accessories",
+    "Facilities",
   ];
 
   @override
@@ -161,7 +162,7 @@ class _AssetListPageState extends State<AssetListPage> {
 
                   final assets = snapshot.data!.docs
                       .map((doc) => Asset.fromFirestore(doc))
-                      .where((asset) => asset.status != 'DISPOSED')
+                      .where((asset) => asset.status != 'Disposed')
                       .where((asset) {
                         final matchesSearch =
                             asset.name

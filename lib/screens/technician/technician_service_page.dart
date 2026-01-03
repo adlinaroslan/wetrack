@@ -40,7 +40,7 @@ class TechnicianServicesPage extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
-            _ServiceList(status: "On Progress"),
+            _ServiceList(status: "In Progress"),
             _ServiceList(status: "Fixed"),
           ],
         ),
@@ -55,7 +55,7 @@ class _ServiceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (status == "On Progress") {
+    if (status == "In Progress") {
       return StreamBuilder<List<Map<String, dynamic>>>(
         stream: FirestoreService().getServiceRequestsByStatus(status),
         builder: (context, serviceSnapshot) {

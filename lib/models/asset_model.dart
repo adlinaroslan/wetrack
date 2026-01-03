@@ -16,6 +16,7 @@ class Asset {
   final DateTime? dueDateTime;
   final DateTime? borrowDate;
   final DateTime? returnDate;
+  final DateTime? createdAt;
 
   Asset({
     required this.docId,
@@ -32,6 +33,7 @@ class Asset {
     this.dueDateTime,
     this.borrowDate,
     this.returnDate,
+    this.createdAt,
   });
 
   factory Asset.fromFirestore(DocumentSnapshot doc) {
@@ -82,6 +84,10 @@ class Asset {
       returnDate: data['returnDate'] != null
           ? (data['returnDate'] as Timestamp).toDate()
           : null,
+
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -101,6 +107,7 @@ class Asset {
           dueDateTime != null ? Timestamp.fromDate(dueDateTime!) : null,
       'borrowDate': borrowDate != null ? Timestamp.fromDate(borrowDate!) : null,
       'returnDate': returnDate != null ? Timestamp.fromDate(returnDate!) : null,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
     };
   }
 

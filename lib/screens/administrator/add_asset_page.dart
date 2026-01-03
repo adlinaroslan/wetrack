@@ -20,6 +20,7 @@ class _AddAssetPageState extends State<AddAssetPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController brandController = TextEditingController();
   final TextEditingController registerDateController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
 
   String? category;
   String status = "In Stock";
@@ -46,6 +47,10 @@ class _AddAssetPageState extends State<AddAssetPage> {
     'Microphone Stand': 'assets/images/mic stand.png',
     'RASPBERRY PI 4B': 'assets/images/RASPBERRY PI 4B.jpg',
     'HyperX': 'assets/images/hyperx.jpg',
+    'Smartboard': 'assets/images/smartboard.png',
+    'Tv Hisense': 'assets/images/hisense.jpg',
+    'Tv Skyworth': 'assets/images/skyworth.jpg',
+    'AC Hisense': 'assets/images/ac hisense.png',
   };
 
   // ============================
@@ -75,7 +80,7 @@ class _AddAssetPageState extends State<AddAssetPage> {
         'brand': brandController.text.trim(),
         'category': category,
         'imageUrl': selectedImage,
-        'location': 'Available',
+        'location': locationController.text.trim(),
         'status': status,
         'registerDate': registerDateController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -212,6 +217,15 @@ class _AddAssetPageState extends State<AddAssetPage> {
 
               const SizedBox(height: 16),
 
+              // LOCATION
+              _buildTextField(
+                controller: locationController,
+                label: "Location",
+                icon: Icons.location_on,
+              ),
+
+              const SizedBox(height: 16),
+
               // CATEGORY
               DropdownButtonFormField<String>(
                 decoration: _inputDecoration("Category"),
@@ -223,6 +237,7 @@ class _AddAssetPageState extends State<AddAssetPage> {
                   DropdownMenuItem(
                       value: "IT-Accessories",
                       child: Text("IT-Accessories")),
+                  DropdownMenuItem(value: "Facilities", child: Text("Facilities")),
                 ],
                 onChanged: (value) => category = value,
                 validator: (v) =>
@@ -269,6 +284,17 @@ class _AddAssetPageState extends State<AddAssetPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    idController.dispose();
+    serialController.dispose();
+    nameController.dispose();
+    brandController.dispose();
+    registerDateController.dispose();
+    locationController.dispose();
+    super.dispose();
   }
 
   // ============================

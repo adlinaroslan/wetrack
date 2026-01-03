@@ -24,6 +24,7 @@ class _ListAssetPageState extends State<ListAssetPage> {
     "Machine",
     "Tools",
     "IT-Accessories",
+    "Facilities",
   ];
 
   // FIXED: Ordered by Specificity (Longer/Specific names first)

@@ -346,7 +346,7 @@ class _UserReturnAssetDetailsPageState
           'damage': commentController.text.isNotEmpty
               ? commentController.text
               : selectedCondition,
-          'status': 'On Progress',
+          'status': 'In Progress',
           'createdAt': Timestamp.now(),
           'userId': currentUser?.uid,
           'userName': currentUser?.displayName ?? 'Unknown User',

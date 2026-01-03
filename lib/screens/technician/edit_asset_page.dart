@@ -28,8 +28,8 @@ class _EditAssetPageState extends State<EditAssetPage> {
     "In Use",
     "Re-Purchased Needed",
     "Service Needed",
-    "AVAILABLE",
-    "DISPOSED",
+    "Available",
+    "Disposed",
   ];
 
   @override
@@ -67,7 +67,7 @@ class _EditAssetPageState extends State<EditAssetPage> {
       final existing = await firestore
           .collection('service_requests')
           .where('assetDocId', isEqualTo: widget.asset.docId)
-          .where('status', isEqualTo: 'On Progress')
+          .where('status', isEqualTo: 'In Progress')
           .limit(1)
           .get();
 
@@ -80,7 +80,7 @@ class _EditAssetPageState extends State<EditAssetPage> {
           'damage': 'Reported by admin',
           'comment': '-',
           'user': 'Admin',
-          'status': 'On Progress',
+          'status': 'In Progress',
 'createdAt': FieldValue.serverTimestamp(),
         });
       }
