@@ -76,7 +76,7 @@ class NotificationList extends StatelessWidget {
                 icon = Icons.info_outline;
                 break;
               default:
-                color = Colors.grey;
+                color = const Color.fromARGB(255, 2, 255, 124);
                 icon = Icons.info;
             }
 

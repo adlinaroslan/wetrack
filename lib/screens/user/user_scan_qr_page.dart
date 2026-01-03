@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:wetrack/services/firestore_service.dart';
 import 'user_request_asset.dart';
 import '../../models/asset_model.dart';
+import 'asset_borrowed_page.dart';
 
 class ScanQRPage extends StatefulWidget {
   const ScanQRPage({super.key});
@@ -50,24 +51,22 @@ class _ScanQRPageState extends State<ScanQRPage> {
     });
   }
 
+  // ✅ UPDATED: Conditional navigation
   void _handleScan(String assetId) async {
     if (isNavigating) return;
 
     setState(() {
       scannedCode = assetId;
-      isNavigating = true; // Block further scans
+      isNavigating = true;
     });
 
-    // Stop the camera and torch... (code omitted for brevity)
     cameraController.stop();
     if (isFlashlightOn) {
       cameraController.toggleTorch();
       isFlashlightOn = false;
     }
 
-    Asset? asset; // <-- Declared as nullable
-
-    // 1. Fetch Asset Data
+    Asset? asset;
     try {
       asset = await _firestoreService.getAssetById(assetId);
     } catch (e) {
@@ -82,19 +81,22 @@ class _ScanQRPageState extends State<ScanQRPage> {
 
     if (!mounted) return;
 
-    // 2. CHECK FOR NULL before navigating
     if (asset != null) {
-      // 3. NAVIGATE, using the null-assertion operator (!)
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => UserRequestAssetPage(
-            asset: asset!, // <-- FIX: Use '!' to assert 'asset' is non-null
-          ),
-        ),
-      );
+      if (asset.status == 'BORROWED') {
+        // 🚨 Navigate to Borrowed Info Page
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => AssetBorrowedPage(asset: asset!)),
+        );
+      } else {
+        // ✅ Navigate to Request Asset Page
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => UserRequestAssetPage(asset: asset!)),
+        );
+      }
     } else {
-      // HANDLE: Asset not found case
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Error: Asset not found for this QR code.'),
@@ -102,7 +104,6 @@ class _ScanQRPageState extends State<ScanQRPage> {
       );
     }
 
-    // 4. RESET: This runs when the user returns
     setState(() {
       scannedCode = null;
       isNavigating = false;
@@ -118,7 +119,6 @@ class _ScanQRPageState extends State<ScanQRPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Desktop UI remains the same
     if (defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.linux ||
         defaultTargetPlatform == TargetPlatform.macOS) {
@@ -148,18 +148,14 @@ class _ScanQRPageState extends State<ScanQRPage> {
       );
     }
 
-    // Mobile (Android/iOS) UI with Custom Theme
     return Scaffold(
-      backgroundColor: Colors.black, // Background for scanner view
+      backgroundColor: Colors.black,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(80),
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF00A7A7),
-                Color(0xFF004C5C)
-              ], // Your gradient colors
+              colors: [Color(0xFF00A7A7), Color(0xFF004C5C)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -183,7 +179,6 @@ class _ScanQRPageState extends State<ScanQRPage> {
                         fontSize: 18),
                   ),
                   const Spacer(),
-                  // Flashlight/Torch Button
                   IconButton(
                     icon: Icon(
                       isFlashlightOn ? Icons.flash_on : Icons.flash_off,
@@ -191,7 +186,6 @@ class _ScanQRPageState extends State<ScanQRPage> {
                     ),
                     onPressed: _toggleFlashlight,
                   ),
-                  // Camera Flip Button
                   IconButton(
                     icon:
                         const Icon(Icons.flip_camera_ios, color: Colors.white),
@@ -222,13 +216,12 @@ class _ScanQRPageState extends State<ScanQRPage> {
                     }
                   },
                 ),
-                // Visual Scanner Frame (Styled to match theme)
                 Container(
                   width: 250,
                   height: 250,
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: const Color(0xFF00A7A7), // Teal border color
+                      color: const Color(0xFF00A7A7),
                       width: 4,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -250,16 +243,13 @@ class _ScanQRPageState extends State<ScanQRPage> {
           Expanded(
             flex: 1,
             child: Container(
-              color: const Color(
-                  0xFFEFF9F9), // Light background for the status area
+              color: const Color(0xFFEFF9F9),
               child: Center(
                 child: isNavigating
                     ? const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(
-                              color:
-                                  Color(0xFF00A7A7)), // Teal loading indicator
+                          CircularProgressIndicator(color: Color(0xFF00A7A7)),
                           SizedBox(height: 10),
                           Text("Fetching asset details...",
                               style: TextStyle(fontSize: 16)),
