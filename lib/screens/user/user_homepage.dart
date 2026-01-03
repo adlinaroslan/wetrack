@@ -11,6 +11,7 @@ import 'package:wetrack/screens/user/logout_page.dart';
 import 'user_notification.dart';
 import 'package:wetrack/services/chat_list_page.dart';
 import 'user_profile_page.dart';
+import 'package:wetrack/services/firestore_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,6 +30,10 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     currentUserId = FirebaseAuth.instance.currentUser?.uid;
     _fetchUnreadCount();
+
+    if (currentUserId != null) {
+      FirestoreService().sendDueSoonReminders(currentUserId!);
+    }
 
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 5),

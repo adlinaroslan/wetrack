@@ -4,6 +4,7 @@ import '../models/request_model.dart';
 import '../models/user_model.dart';
 import '../models/notification_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -90,47 +91,56 @@ class FirestoreService {
             }).toList());
   }
 
-Future<Map<String, dynamic>?> getServiceRequestWithAsset(
-    String serviceId) async {
-  try {
-    // 1. Fetch service request
-    final serviceSnap = await serviceRequestsRef.doc(serviceId).get();
-    if (!serviceSnap.exists) return null;
+  Future<Map<String, dynamic>?> getServiceRequestWithAsset(
+      String serviceId) async {
+    try {
+      // 1. Fetch service request
+      final serviceSnap = await serviceRequestsRef.doc(serviceId).get();
+      if (!serviceSnap.exists) return null;
 
-    final service = Map<String, dynamic>.from(serviceSnap.data()!);
-    service['serviceId'] = serviceSnap.id;
+      final service = Map<String, dynamic>.from(serviceSnap.data()!);
+      service['serviceId'] = serviceSnap.id;
 
-    final assetId = service['assetId'];
-    if (assetId == null) return service;
+      final assetId = service['assetId'];
+      if (assetId == null) return service;
 
-    // 2. Fetch asset
-    final assetSnap = await assetsRef.doc(assetId).get();
-    if (!assetSnap.exists) return service;
+      // 2. Fetch asset
+      final assetSnap = await assetsRef.doc(assetId).get();
+      if (!assetSnap.exists) return service;
 
-    final asset = assetSnap.data()!;
+      final asset = assetSnap.data()!;
 
-    // 3. Merge ONLY required fields
-    service['assetDocId'] = asset.docId;
-    service['assetId'] = asset.id;
-    service['assetName'] = asset.name;
-    service['serialNumber'] = asset.serialNumber;
-    service['brand'] = asset.brand;
-    service['category'] = asset.category;
-    service['location'] = asset.location;
+      // 3. Merge ONLY required fields
+      service['assetDocId'] = asset.docId;
+      service['assetId'] = asset.id;
+      service['assetName'] = asset.name;
+      service['serialNumber'] = asset.serialNumber;
+      service['brand'] = asset.brand;
+      service['category'] = asset.category;
+      service['location'] = asset.location;
 
-    return service;
-  } catch (e) {
-    debugPrint('Error fetching service detail: $e');
-    return null;
+      return service;
+    } catch (e) {
+      debugPrint('Error fetching service detail: $e');
+      return null;
+    }
   }
-}
-
 
   // ---------------------- USER PROFILE ----------------------
 
   Future<UserModel?> getUserProfile(String uid) async {
     final doc = await usersRef.doc(uid).get();
     return doc.exists ? doc.data() : null;
+  }
+
+  Future<String?> getBorrowerName(String userId) async {
+    try {
+      final user = await getUserProfile(userId);
+      return user?.displayName;
+    } catch (e) {
+      debugPrint('Error fetching borrower name: $e');
+      return null;
+    }
   }
 
   Future<void> createUserProfile({
@@ -533,6 +543,42 @@ Future<Map<String, dynamic>?> getServiceRequestWithAsset(
         );
       }).toList();
     });
+  }
+
+  //---------------------- REMINDER ----------------------
+  Future<void> sendDueSoonReminders(String userId) async {
+    try {
+      final now = DateTime.now();
+      final twoDaysLater = now.add(const Duration(days: 2));
+
+      final borrowedAssets = await _db
+          .collection('assets')
+          .where('status', isEqualTo: 'BORROWED')
+          .where('borrowedByUserId', isEqualTo: userId)
+          .get();
+
+      for (var doc in borrowedAssets.docs) {
+        final data = doc.data();
+        final dueTimestamp = data['dueDateTime'];
+        final assetName = data['name'] ?? 'Asset';
+
+        if (dueTimestamp is Timestamp) {
+          final dueDate = dueTimestamp.toDate();
+          if (dueDate.isAfter(now) && dueDate.isBefore(twoDaysLater)) {
+            await sendUserNotification(
+              toUserId: userId,
+              title: "Return Reminder ⏰",
+              message:
+                  "Please return **$assetName** by ${DateFormat('dd MMM yyyy').format(dueDate)}",
+              type: 'return_reminder',
+              relatedId: doc.id,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Error sending due soon reminders: $e");
+    }
   }
 
   // ---------------------- NOTIFICATIONS ----------------------
