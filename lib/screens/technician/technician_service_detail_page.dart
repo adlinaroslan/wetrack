@@ -49,7 +49,8 @@ class _TechnicianServiceDetailPageState
         _itemData['brand'] = data['brand'] ?? _itemData['brand'];
         _itemData['category'] = data['category'] ?? _itemData['category'];
         _itemData['location'] = data['location'] ?? _itemData['location'];
-        _itemData['status'] = data['status'] ?? _itemData['status'];
+        // Don't overwrite the service request status with asset status
+        // The service request status is the source of truth for the button visibility
       });
     });
   }
@@ -126,7 +127,7 @@ class _TechnicianServiceDetailPageState
           _itemData['brand'] = _itemData['brand'] ?? data['brand'];
           _itemData['category'] = _itemData['category'] ?? data['category'];
           _itemData['location'] = _itemData['location'] ?? data['location'];
-          _itemData['status'] = _itemData['status'] ?? data['status'];
+          // Don't overwrite status - preserve the service request status
         });
       }
     } catch (e) {
@@ -329,7 +330,10 @@ class _TechnicianServiceDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final isFixed = (_itemData['status'] ?? '').toString() == 'Fixed';
+    // Check service request status first (if it exists), then asset status
+    // This ensures Fixed service requests show no button, even if asset status is "In Stock"
+    final serviceRequestStatus = (_itemData['status'] ?? '').toString();
+    final isFixed = serviceRequestStatus == 'Fixed';
 
     // Format fixedAt timestamp if exists
     String fixedAtFormatted = '-';
