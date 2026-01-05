@@ -82,13 +82,13 @@ class _TechnicianReportPageState extends State<TechnicianReportPage> {
              DateFormat('MMMM').format(timestamp) == selectedMonth;
     }).toList();
 
-    // 🔹 Sort by timestamp descending (newest first)
+    // 🔹 Sort by timestamp ascending (oldest first)
     filtered.sort((a, b) {
       final timeA = a.createdAt ?? (a.registerDate != null ? 
           DateFormat('dd MMM yyyy').parse(a.registerDate!) : DateTime(2000));
       final timeB = b.createdAt ?? (b.registerDate != null ? 
           DateFormat('dd MMM yyyy').parse(b.registerDate!) : DateTime(2000));
-      return timeB.compareTo(timeA);
+      return timeA.compareTo(timeB);
     });
 
     pdf.addPage(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/request_model.dart';
 import 'package:wetrack/services/firestore_service.dart';
+import '../../services/asset_audit_service.dart';
 import 'admin_request_detail.dart';
 
 class AdminRequestPage extends StatefulWidget {
@@ -113,6 +114,8 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                           children: [
                             ElevatedButton(
                               onPressed: () async {
+                                final auditService = AssetAuditService();
+                                
                                 await _fs.approveRequest(
                                   requestId: r.id,
                                   assetId: r.assetId,
@@ -120,6 +123,18 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                                   dueDate: DateTime.now()
                                       .add(const Duration(days: 7)),
                                   requestedDate: r.requestedDate,
+                                );
+
+                                // Log request approval
+                                await auditService.logAssetChange(
+                                  assetDocId: r.assetId,
+                                  assetId: r.assetId,
+                                  assetName: r.assetName,
+                                  previousStatus: 'In Stock',
+                                  newStatus: 'In Use',
+                                  changeType: 'Request Approved',
+                                  details: 'Request approved by admin - Asset borrowed by ${r.userName}',
+                                  changedBy: 'Admin',
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -131,10 +146,24 @@ class _AdminRequestPageState extends State<AdminRequestPage> {
                             const SizedBox(width: 8),
                             ElevatedButton(
                               onPressed: () async {
+                                final auditService = AssetAuditService();
+                                
                                 await _fs.declineRequest(
                                   requestId: r.id,
                                   assetId: r.assetId,
                                   borrowerUserId: r.userId,
+                                );
+
+                                // Log request decline
+                                await auditService.logAssetChange(
+                                  assetDocId: r.assetId,
+                                  assetId: r.assetId,
+                                  assetName: r.assetName,
+                                  previousStatus: 'Available',
+                                  newStatus: 'In Stock',
+                                  changeType: 'Request Declined',
+                                  details: 'Request declined by admin - Asset remains in stock',
+                                  changedBy: 'Admin',
                                 );
                               },
                               style: ElevatedButton.styleFrom(

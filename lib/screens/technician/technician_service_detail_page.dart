@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // <-- For formatting date
+import '../../services/asset_audit_service.dart';
 
 class TechnicianServiceDetailPage extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -136,14 +137,15 @@ class _TechnicianServiceDetailPageState
       if (mounted) setState(() => _loading = false);
     }
   }
-
   Future<void> _markAsFixed(BuildContext context) async {
     final firestore = FirebaseFirestore.instance;
+    final auditService = AssetAuditService();
 
     try {
       // Resolve asset doc id OUTSIDE transaction (no reads/writes needed yet)
       String? assetDocId = (_itemData['assetDocId'] ?? '').toString();
       final assetIdField = (_itemData['assetId'] ?? '').toString();
+      final assetName = (_itemData['assetName'] ?? '').toString();
 
       if (assetDocId.isEmpty && assetIdField.isNotEmpty) {
         // try document id
@@ -218,6 +220,20 @@ class _TechnicianServiceDetailPageState
           }
         }
       });
+
+      // Log the asset as fixed
+      if (assetDocId != null && assetDocId.isNotEmpty) {
+        await auditService.logAssetChange(
+          assetDocId: assetDocId,
+          assetId: assetIdField,
+          assetName: assetName,
+          previousStatus: 'Service Needed',
+          newStatus: 'In Stock',
+          changeType: 'Asset Fixed',
+          details: 'Service request marked as fixed by technician',
+          changedBy: 'Technician',
+        );
+      }
 
       // Ensure any service_requests that reference this asset are also marked Fixed
       try {

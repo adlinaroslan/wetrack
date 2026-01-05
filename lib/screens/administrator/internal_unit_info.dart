@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/asset_model.dart';
+import '../../services/asset_audit_service.dart';
 import 'edit_asset_page.dart';
 import 'qr_viewer_page.dart';
 
@@ -206,6 +207,8 @@ class AssetDetailPage extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text("Dispose"),
             onPressed: () async {
+              final auditService = AssetAuditService();
+              
               await FirebaseFirestore.instance
                   .collection('assets')
                   .doc(asset.docId)
@@ -214,6 +217,18 @@ class AssetDetailPage extends StatelessWidget {
                 "location": "Disposed",
                 "disposedAt": FieldValue.serverTimestamp(),
               });
+
+              // Log disposal
+              await auditService.logAssetChange(
+                assetDocId: asset.docId,
+                assetId: asset.id,
+                assetName: asset.name,
+                previousStatus: asset.status,
+                newStatus: 'Disposed',
+                changeType: 'Asset Disposed',
+                details: 'Asset was disposed by admin',
+                changedBy: 'Admin',
+              );
 
               Navigator.pop(context); // close dialog
               Navigator.pop(context); // go back to list

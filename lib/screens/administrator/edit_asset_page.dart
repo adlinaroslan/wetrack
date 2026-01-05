@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/asset_model.dart';
+import '../../services/asset_audit_service.dart';
 
 class EditAssetPage extends StatefulWidget {
   final Asset asset;
@@ -50,6 +51,10 @@ class _EditAssetPageState extends State<EditAssetPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final firestore = FirebaseFirestore.instance;
+    final auditService = AssetAuditService();
+    
+    final oldStatus = widget.asset.status;
+    final newStatus = selectedStatus;
 
     // 1️⃣ Update asset
     await firestore.collection("assets").doc(widget.asset.docId).update({
@@ -61,6 +66,20 @@ class _EditAssetPageState extends State<EditAssetPage> {
       "imageUrl": imagePathController.text.trim(),
       "status": selectedStatus,
     });
+
+    // Log asset status change
+    if (oldStatus != newStatus) {
+      await auditService.logAssetChange(
+        assetDocId: widget.asset.docId,
+        assetId: widget.asset.id,
+        assetName: widget.asset.name,
+        previousStatus: oldStatus,
+        newStatus: newStatus,
+        changeType: 'Status Change',
+        details: 'Admin updated asset status',
+        changedBy: 'Admin',
+      );
+    }
 
     // 2️⃣ CREATE SERVICE REQUEST IF NEEDED
     if (selectedStatus == "Service Needed") {
@@ -83,6 +102,18 @@ class _EditAssetPageState extends State<EditAssetPage> {
           'status': 'In Progress',
 'createdAt': FieldValue.serverTimestamp(),
         });
+
+        // Log service request creation
+        await auditService.logAssetChange(
+          assetDocId: widget.asset.docId,
+          assetId: widget.asset.id,
+          assetName: widget.asset.name,
+          previousStatus: oldStatus,
+          newStatus: 'Service Needed',
+          changeType: 'Service Request Created',
+          details: 'Service request created by admin',
+          changedBy: 'Admin',
+        );
       }
     }
 
