@@ -21,7 +21,7 @@ String getAssetImagePath(String assetName) {
     'cordless blower': 'assets/images/cordless blower.jpg',
     'portable voice amplifier': 'assets/images/portable voice amplifier.jpg',
     'hdmi': 'assets/images/hdmi.jpg',
-    'vga': 'assets/images/VGA.jpg',
+    'vga': 'assets/images/vga.jpg',
     'ugreen adapter': 'assets/images/ugreen adapter.jpg',
     'microphone stand': 'assets/images/mic stand.png',
     'raspberry pi 4': 'assets/images/RASPBERRY PI 4B.jpg',
@@ -34,8 +34,11 @@ String getAssetImagePath(String assetName) {
     'pendrive': 'assets/images/usb.png',
     'rca': 'assets/images/rca.png',
     'projector': 'assets/images/projector.png',
-    'hdmic': 'assets/images/hdmic.jpeg',
     'mouse': 'assets/images/mouse.png',
+    'smartboard': 'assets/images/smartboard.png',
+    'tv hisense': 'assets/images/hisense.jpg',
+    'tv skyworth': 'assets/images/skyworth.jpg',
+    'ac hisense': 'assets/images/ac hisense.png',
   };
 
   if (imageOptions.containsKey(name)) {

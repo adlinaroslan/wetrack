@@ -364,10 +364,7 @@ class _UserReturnAssetDetailsPageState
       }
 
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const UserReturnAssetPage()),
-          (r) => r.isFirst);
+      Navigator.pop(context);
     } catch (e) {
       _showSnackbar(context, e.toString(), Colors.red);
     } finally {
